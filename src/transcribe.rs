@@ -22,10 +22,15 @@ pub async fn run_transcription_pipeline<R: Runtime>(
     let original_samples = wav::read_wav(options.path.clone().into())
         .context("failed to decode normalized WAV to PCM samples")?;
 
+    let mut samples = vec![0.0f32; original_samples.len()];
+    whisper_rs::convert_integer_to_float_audio(&original_samples, &mut samples)?;
+
     let mut state = ctx.create_state().context("failed to create state")?;
     let mut params = setup_params(&options);
     
     let st = std::time::Instant::now();
+
+    // TODO: Change transcription loop to use vad or speech_segments iterator instead of full and remove special diarization progress handling
 
     // Only set up Whisper's internal progress callback when diarization is NOT enabled
     // When diarization is enabled, we handle progress manually in the diarization loop above
@@ -34,13 +39,6 @@ pub async fn run_transcription_pipeline<R: Runtime>(
         let internal_progress_callback = move |progress: i32| callback(progress);
         *guard = Some(Box::new(internal_progress_callback));
     }
-    let mut samples = vec![0.0f32; original_samples.len()];
-
-    whisper_rs::convert_integer_to_float_audio(&original_samples, &mut samples)?;
-
-    // let vad_model_path = options.vad_model_path.as_deref().unwrap();
-    // let speech_segments = detect_speech_segments(vad_model_path, &samples)?;
-    // println!("speech segments: {:#?}", speech_segments);
 
     if let Some(abort_callback) = abort_callback {
         params.set_abort_callback_safe(abort_callback);

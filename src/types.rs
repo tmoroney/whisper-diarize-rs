@@ -18,11 +18,12 @@ pub struct TranscribeOptions {
     pub offset: Option<f64>,
     pub model: String,
     pub lang: Option<String>,
-    pub translate: Option<bool>,
-    pub enable_dtw: Option<bool>,
-    pub enable_diarize: Option<bool>,
-    pub max_speakers: Option<usize>,
-    pub vad_model_path: Option<String>,
+    pub translate: Option<bool>, // Whisper will translate to English if true (cannot translate to other languages)
+    pub word_timestamps: Option<bool>, // Enable word-level timestamps
+    pub enable_dtw: Option<bool>, // Dynamic Time Warping (DTW) improves better word timestamps
+    pub enable_diarize: Option<bool>, // Labels segments with speaker_id
+    pub max_speakers: Option<usize>, // Max number of speakers to detect (otherwise auto detection may create too many speakers)
+    pub vad_model_path: Option<String>, // Path to Voice Activity Detection (VAD) model - improves transcription quality by removing silence
     pub advanced: Option<AdvancedTranscribe>, // Optional knobs
 }
 
