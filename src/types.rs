@@ -20,7 +20,7 @@ pub struct TranscribeOptions {
     pub lang: Option<String>,
     pub translate: Option<bool>, // Whisper will translate to English if true (cannot translate to other languages)
     pub word_timestamps: Option<bool>, // Enable word-level timestamps
-    pub enable_dtw: Option<bool>, // Dynamic Time Warping (DTW) improves better word timestamps
+    pub enable_dtw: Option<bool>, // Dynamic Time Warping (DTW) improves better word timestamps - works best for larger models (e.g. Large-V3-Turbo)
     pub enable_diarize: Option<bool>, // Labels segments with speaker_id
     pub max_speakers: Option<usize>, // Max number of speakers to detect (otherwise auto detection may create too many speakers)
     pub vad_model_path: Option<String>, // Path to Voice Activity Detection (VAD) model - improves transcription quality by removing silence
@@ -54,4 +54,12 @@ pub struct Segment {
     pub speaker_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub words: Option<Vec<WordTimestamp>>,
+}
+
+// Internal struct for VAD and Pyannote diarization segments
+#[derive(Debug, Clone)]
+pub struct SpeechSegment {
+    pub start: f64,
+    pub end: f64,
+    pub samples: Vec<i16>,
 }

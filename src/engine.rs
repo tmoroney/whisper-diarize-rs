@@ -14,7 +14,7 @@ pub struct EngineConfig {
 pub struct Callbacks<'a> {
     pub transcribe_progress: Option<&'a ProgressFn>,
     pub diarize_progress: Option<&'a ProgressFn>,
-    pub is_cancelled: Option<&'a dyn Fn() -> bool + Send + Sync>,
+    pub is_cancelled: Option<&'a (dyn Fn() -> bool + Send + Sync)>,
 }
 
 pub struct Engine {
@@ -30,18 +30,30 @@ impl Engine {
     pub async fn transcribe(
         &self,
         whisper_model: &str,
-        opts: crate::TranscribeOptions,
-        diarize: Option<crate::DiarizeOptions>,
+        options: crate::TranscribeOptions,
         cb: Callbacks<'_>,
-    ) -> eyre::Result<crate::Transcript> {
-        // 1) Ensure/download models with self.models using cfg.cache_dir
-        // 2) Create whisper context (transcribe::create_context)
-        // 3) Run pipeline (transcribe::run_pipeline)
-        // 4) If diarize, run diarize::process_diarization and merge
-        unimplemented!()
+    ) -> eyre::Result<Vec<crate::Segment>> {
+        // Ensure/download Whisper model
+        let _model_path = self
+            .models
+            .ensure_whisper_model(whisper_model, cb.transcribe_progress, cb.is_cancelled)
+            .await?;
+
+        // If diarization is requested, ensure diarization models
+        if let Some(true) = options.enable_diarize {
+            let seg_url = "https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/segmentation-3.0.onnx";
+            let emb_url = "https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/wespeaker_en_voxceleb_CAM++.onnx";
+            let _ = self
+                .models
+                .ensure_diarize_models(seg_url, emb_url, cb.diarize_progress, cb.is_cancelled)
+                .await?;
+        }
+
+        // TODO: wire up actual transcription/diarization pipeline
+        Ok(Vec::new())
     }
 
     pub async fn delete_whisper_model(&self, model_name: &str) -> eyre::Result<()> {
-        unimplemented!()
+        self.models.delete_whisper_model(model_name)
     }
 }
