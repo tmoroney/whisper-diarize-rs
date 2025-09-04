@@ -108,7 +108,6 @@ impl ModelManager {
     }
 
     // ---- Public API ----
-
     pub async fn ensure_whisper_model(
         &self,
         model: &str,
@@ -478,17 +477,17 @@ fn remove_snapshot_file_and_blob(path: &Path) -> Result<()> {
 }
 
 fn url_filename(url: &str) -> Option<String> {
-url.rsplit('/').next().map(|s| s.to_string())
+    url.rsplit('/').next().map(|s| s.to_string())
 }
 
 async fn download_to(dest_path: &Path, url: &str) -> Result<()> {
-if let Some(parent) = dest_path.parent() { fs::create_dir_all(parent).ok(); }
-let resp = reqwest::get(url).await.context("Failed to GET url")?;
-if !resp.status().is_success() {
-    bail!("Failed to download '{}': status {}", url, resp.status());
-}
-let bytes = resp.bytes().await.context("Failed to read body bytes")?;
-let mut f = fs::File::create(dest_path).context("Failed to create destination file")?;
-std::io::copy(&mut bytes.as_ref(), &mut f).context("Failed to write file")?;
-Ok(())
+    if let Some(parent) = dest_path.parent() { fs::create_dir_all(parent).ok(); }
+    let resp = reqwest::get(url).await.context("Failed to GET url")?;
+    if !resp.status().is_success() {
+        bail!("Failed to download '{}': status {}", url, resp.status());
+    }
+    let bytes = resp.bytes().await.context("Failed to read body bytes")?;
+    let mut f = fs::File::create(dest_path).context("Failed to create destination file")?;
+    std::io::copy(&mut bytes.as_ref(), &mut f).context("Failed to write file")?;
+    Ok(())
 }

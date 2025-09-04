@@ -116,7 +116,7 @@ fn calculate_dtw_mem_size(num_samples: usize) -> usize {
 
 fn create_context(
     model_path: &Path,
-    model: &str,
+    model_name: &str,
     gpu_device: Option<i32>,
     use_gpu: Option<bool>,
     enable_dtw: Option<bool>,
@@ -141,7 +141,7 @@ fn create_context(
     // Set DTW parameters if enabled
     if let Some(true) = enable_dtw {
         ctx_params.flash_attn(false); // DTW requires flash_attn off
-        let model_preset = match model {
+        let model_preset = match model_name {
             "tiny.en" => DtwModelPreset::TinyEn,
             "tiny" => DtwModelPreset::Tiny,
             "base.en" => DtwModelPreset::BaseEn,
@@ -209,7 +209,7 @@ pub async fn run_transcription_pipeline<R: Runtime>(
     }
 
     // Read the mono wav file
-    let original_samples = wav::read_wav(options.path.clone().into())
+    let original_samples = audio::read_wav(options.path.clone().into())
         .context("failed to decode normalized WAV to PCM samples")?;
 
     // Convert to f32 samples for whisper.cpp
@@ -219,8 +219,8 @@ pub async fn run_transcription_pipeline<R: Runtime>(
     // Create whisper.cpp context
     let ctx = create_context(
         model_path.as_path(),
-        &options.model,
-        None,
+        &options.model, // requires model name for dtw preset
+        options.gpu_device,
         options.enable_gpu,
         options.enable_dtw,
         Some(samples.len()),
@@ -232,36 +232,19 @@ pub async fn run_transcription_pipeline<R: Runtime>(
     
     let st = std::time::Instant::now();
 
-    // TODO: Change transcription loop to use vad or speech_segments iterator instead of full and remove special diarization progress handling
-
-    // Only set up Whisper's internal progress callback when diarization is NOT enabled
-    // When diarization is enabled, we handle progress manually in the diarization loop above
-    if let Some(callback) = progress_callback {
-        let mut guard = PROGRESS_CALLBACK.lock().map_err(|e| eyre!("{:?}", e))?;
-        let internal_progress_callback = move |progress: i32| callback(progress);
-        *guard = Some(Box::new(internal_progress_callback));
-    }
-
     // DEFINE ABORT CALLBACK
     if let Some(abort_callback) = abort_callback {
         params.set_abort_callback_safe(abort_callback);
     }
 
     // DEFINE PROGRESS CALLBACK
-    if PROGRESS_CALLBACK
-        .lock()
-        .map_err(|e| eyre!("{:?}", e))?
-        .as_ref()
-        .is_some()
-    {
-        params.set_progress_callback_safe(|progress| {
-            if let Ok(mut cb) = PROGRESS_CALLBACK.lock() {
-                if let Some(cb) = cb.as_mut() {
-                    cb(progress);
-                }
+    params.set_progress_callback_safe(|progress| {
+        if let Ok(mut cb) = PROGRESS_CALLBACK.lock() {
+            if let Some(cb) = cb.as_mut() {
+                cb(progress);
             }
-        });
-    }
+        }
+    });
 
     state.full(params, &samples).context("failed to transcribe")?;
     let _et = std::time::Instant::now();

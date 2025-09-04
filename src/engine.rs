@@ -1,4 +1,3 @@
-// src/engine.rs
 use std::path::PathBuf;
 
 pub type ProgressFn = dyn Fn(i32) + Send + Sync;
@@ -29,14 +28,14 @@ impl Engine {
 
     pub async fn transcribe(
         &self,
-        whisper_model: &str,
+        model_name: &str,
         options: crate::TranscribeOptions,
         cb: Callbacks<'_>,
     ) -> eyre::Result<Vec<crate::Segment>> {
         // Ensure/download Whisper model
         let _model_path = self
             .models
-            .ensure_whisper_model(whisper_model, cb.transcribe_progress, cb.is_cancelled)
+            .ensure_whisper_model(model_name, cb.transcribe_progress, cb.is_cancelled)
             .await?;
 
         // If diarization is requested, ensure diarization models
@@ -50,7 +49,17 @@ impl Engine {
         }
 
         // TODO: wire up actual transcription/diarization pipeline
-        Ok(Vec::new())
+        crate::transcribe::run_transcription_pipeline(
+            model_path,
+            options,
+            cb.transcribe_progress,
+            cb.diarize_progress,
+            cb.is_cancelled,
+            diarize_options,
+            additional_ffmpeg_args,
+            enable_diarize,
+        )
+        .await
     }
 
     pub async fn delete_whisper_model(&self, model_name: &str) -> eyre::Result<()> {
