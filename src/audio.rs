@@ -1,10 +1,10 @@
-use eyre::Result;
-use hound::WavReader;
+use eyre::{Result, bail, WrapErr};
+use hound::{WavReader, SampleFormat};
 
-pub fn read_wav(file_path: &str) -> Result<Vec<i16>> {
+pub fn read_wav(path: &str) -> Result<Vec<i16>> {
     tracing::debug!("wav reader read from {:?}", path);
     let reader = WavReader::open(path).context("failed to read file")?;
-    tracing::debug!("parsing {}", path.display());
+    tracing::debug!("parsing {}", path);
 
     let channels = reader.spec().channels;
     if reader.spec().channels != 1 {

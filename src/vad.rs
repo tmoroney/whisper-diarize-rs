@@ -3,8 +3,12 @@ use crate::types::SpeechSegment;
 use eyre::Result;
 
 /// Detect speech segments with Silero VAD via whisper-rs.
-/// `samples` must be mono f32 at 16_000 Hz in [-1.0, 1.0].
-pub fn detect_speech_segments(vad_model: &str, samples: &[f32]) -> Result<Vec<SpeechSegment>> {
+/// Input `int_samples` must be mono i16 at 16_000 Hz.
+pub fn get_segments(vad_model: &str, int_samples: &[i16]) -> Result<Vec<SpeechSegment>> {
+    // Convert entire integer buffer to f32 for VAD processing
+    let mut samples = vec![0.0f32; int_samples.len()];
+    whisper_rs::convert_integer_to_float_audio(&int_samples, &mut samples)?;
+
     // 1) Configure the VAD execution context (CPU is fine; GPU here means CUDA-only).
     let ctx = WhisperVadContextParams::new();
 
@@ -23,11 +27,11 @@ pub fn detect_speech_segments(vad_model: &str, samples: &[f32]) -> Result<Vec<Sp
     // (See docs for meanings / defaults - https://docs.rs/whisper_rs/latest/whisper_rs/struct.WhisperVadParams.html)
 
     // 4) Run the whole pipeline
-    let segs = vad.segments_from_samples(vadp, samples)?;
+    let segs = vad.segments_from_samples(vadp, &samples)?;
 
     // 5) Convert VAD centiseconds to seconds, derive clamped sample indices at 16 kHz,
-    //    and collect segments with properly converted i16 audio samples.
-    let n = samples.len();
+    //    and collect segments with integer (i16) samples sliced from the original buffer.
+    let n = int_samples.len();
     const SR: f32 = 16_000.0;
     let n_f32 = n as f32;
 
@@ -41,15 +45,9 @@ pub fn detect_speech_segments(vad_model: &str, samples: &[f32]) -> Result<Vec<Sp
             let start_idx = ((start_sec as f32 * SR).round()).clamp(0.0, n_f32) as usize;
             let end_idx = ((end_sec as f32 * SR).round()).clamp(0.0, n_f32) as usize;
 
-            // Convert f32 samples in [-1,1] to i16 with clamping
+            // Extract i16 samples from the original buffer
             let seg_samples: Vec<i16> = if end_idx > start_idx {
-                samples[start_idx..end_idx]
-                    .iter()
-                    .map(|&x| {
-                        let v = (x * 32767.0).round();
-                        v.clamp(-32768.0, 32767.0) as i16
-                    })
-                    .collect()
+                int_samples[start_idx..end_idx].to_vec()
             } else {
                 Vec::new()
             };

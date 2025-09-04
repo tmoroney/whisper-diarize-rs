@@ -78,11 +78,17 @@ impl<'a> HubProgress for DownloadProgress<'a> {
 
 pub struct ModelManager {
     cfg: EngineConfig,
+    diarize_segment_model_path: Option<PathBuf>,
+    diarize_embedding_model_path: Option<PathBuf>,
 }
 
 impl ModelManager {
     pub fn new(cfg: EngineConfig) -> Self {
-        Self { cfg }
+        Self { 
+            cfg,
+            diarize_segment_model_path: None,
+            diarize_embedding_model_path: None,
+        }
     }
 
     fn model_cache_dir(&self) -> Result<PathBuf> {
@@ -175,7 +181,7 @@ impl ModelManager {
                 let needs_coreml = false;
 
                 if needs_coreml {
-                    let mut prog = DownloadProgress::new(
+                    let prog = DownloadProgress::new(
                         progress,
                         is_cancelled,
                         0.0,

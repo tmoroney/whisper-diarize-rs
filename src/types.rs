@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 
 #[derive(Clone, Debug, Default)]
 pub struct AdvancedTranscribe {
@@ -9,22 +8,37 @@ pub struct AdvancedTranscribe {
     pub temperature: Option<f32>, // Temperature for sampling. Defaults to 0.7.
     pub max_text_ctx: Option<i32>, // The maximum number of tokens to keep in the text context. Defaults to 16000.
     pub init_prompt: Option<String>, // Initial prompt for the model.
+    pub diarize_threshold: Option<f32>, // Threshold for diarization
 }
 
 // TranscribeOptions references AdvancedTranscribe optionally
 #[derive(Clone, Debug)]
 pub struct TranscribeOptions {
-    pub audio_path: String,
-    pub offset: Option<f64>,
+    pub offset: Option<f64>, // Move all timestamps forward by this amount (seconds) - useful for aligning with video timestamps
     pub model: String,
     pub lang: Option<String>,
     pub translate: Option<bool>, // Whisper will translate to English if true (cannot translate to other languages)
     pub word_timestamps: Option<bool>, // Enable word-level timestamps
-    pub enable_dtw: Option<bool>, // Dynamic Time Warping (DTW) improves better word timestamps - works best for larger models (e.g. Large-V3-Turbo)
+    pub enable_vad: Option<bool>, // Enable Voice Activity Detection to isolate speech segments
     pub enable_diarize: Option<bool>, // Labels segments with speaker_id
     pub max_speakers: Option<usize>, // Max number of speakers to detect (otherwise auto detection may create too many speakers)
-    pub vad_model_path: Option<String>, // Path to Voice Activity Detection (VAD) model - improves transcription quality by removing silence
     pub advanced: Option<AdvancedTranscribe>, // Optional knobs
+}
+
+impl Default for TranscribeOptions {
+    fn default() -> Self {
+        Self {
+            offset: None,
+            model: "base".to_string(), // Default to base model
+            lang: None,
+            translate: None,
+            word_timestamps: None,
+            enable_vad: None,
+            enable_diarize: None,
+            max_speakers: None,
+            advanced: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug)]

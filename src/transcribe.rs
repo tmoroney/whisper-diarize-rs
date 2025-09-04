@@ -1,14 +1,29 @@
-use crate::types::{Segment, TranscribeOptions};
-use eyre::Result;
-use std::path::PathBuf;
-use whisper_rs::{FullParams, SamplingStrategy};
+use crate::types::{SpeechSegment, Segment, WordTimestamp, TranscribeOptions, DiarizeOptions};
+use eyre::{Result, bail, WrapErr, OptionExt};
+use std::path::Path;
+use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperSegment, DtwParameters, DtwMode, DtwModelPreset};
+use std::panic::{catch_unwind, AssertUnwindSafe};
+use std::sync::Mutex;
+use std::sync::atomic::AtomicI32;
+use eyre::eyre;
+
+type ProgressCallbackType = once_cell::sync::Lazy<Mutex<Option<Box<dyn Fn(i32) + Send + Sync>>>>;
+static PROGRESS_CALLBACK: ProgressCallbackType = once_cell::sync::Lazy::new(|| Mutex::new(None));
+
+// Global cancellation state
+pub static SHOULD_CANCEL: once_cell::sync::Lazy<Mutex<bool>> =
+    once_cell::sync::Lazy::new(|| Mutex::new(false));
+
+// Latest progress values updated from hot compute loops (blocking threads)
+// Emission to the frontend is throttled via a periodic Tokio task.
+static LATEST_TRANSCRIBE_PROGRESS: AtomicI32 = AtomicI32::new(0);
 
 fn setup_params(options: &TranscribeOptions) -> FullParams {
     // Determine the beam size or best_of value, defaulting to 5
-    let mut beam_size_or_best_of = options.sampling_bestof_or_beam_size.unwrap_or(5).max(1);
+    let beam_size_or_best_of = options.advanced.as_ref().and_then(|a| a.best_of_or_beam_size).unwrap_or(5).max(1);
 
     // Decide on the sampling strategy
-    let sampling_strategy = match options.sampling_strategy.as_deref() {
+    let sampling_strategy = match options.advanced.as_ref().and_then(|a| a.sampling_strategy.as_deref()) {
         Some("greedy") => SamplingStrategy::Greedy {
             best_of: beam_size_or_best_of,
         },
@@ -28,6 +43,7 @@ fn setup_params(options: &TranscribeOptions) -> FullParams {
     params.set_print_timestamps(false);
     params.set_suppress_blank(true);
     params.set_token_timestamps(true);
+    params.set_single_segment(true); // Works better for speech segments
 
     // Set input language
     if let Some(ref lang) = options.lang {
@@ -39,25 +55,31 @@ fn setup_params(options: &TranscribeOptions) -> FullParams {
         params.set_translate(true);
     }
 
+    let advanced = options.advanced.as_ref().unwrap();
+
+    if let Some(temp) = advanced.temperature {
+        params.set_temperature(temp);
+    }
+
     // Optional temperature (only greedy sampling supports temperature > 0)
-    if options.sampling_strategy.as_deref() == Some("greedy") {
-        if let Some(temp) = options.temperature {
+    if advanced.sampling_strategy.as_deref() == Some("greedy") {
+        if let Some(temp) = advanced.temperature {
             params.set_temperature(temp);
         }
     }
 
     // Optional max text context
-    if let Some(ctx) = options.max_text_ctx {
+    if let Some(ctx) = advanced.max_text_ctx {
         params.set_n_max_text_ctx(ctx);
     }
 
     // Optional initial prompt
-    if let Some(ref prompt) = options.init_prompt {
+    if let Some(ref prompt) = advanced.init_prompt {
         params.set_initial_prompt(prompt);
     }
 
     // Optional thread count
-    if let Some(threads) = options.n_threads {
+    if let Some(threads) = advanced.n_threads {
         params.set_n_threads(threads);
     }
 
@@ -114,7 +136,7 @@ fn calculate_dtw_mem_size(num_samples: usize) -> usize {
     (clamped + (ALIGN - 1)) & !(ALIGN - 1)
 }
 
-fn create_context(
+pub fn create_context(
     model_path: &Path,
     model_name: &str,
     gpu_device: Option<i32>,
@@ -191,46 +213,186 @@ fn create_context(
     }
 }
 
-// Pass in path to normalised mono 16k PCM16 audio file
-pub async fn run_transcription_pipeline<R: Runtime>(
-    model_path: PathBuf,
-    options: TranscribeOptions,
-    progress_callback: Option<Box<dyn Fn(i32) + Send + Sync>>,
-    new_segment_callback: Option<Box<dyn Fn(Segment) + Send>>,
-    abort_callback: Option<Box<dyn Fn() -> bool + Send>>,
-    diarize_options: Option<DiarizeOptions>,
-    additional_ffmpeg_args: Option<Vec<String>>,
-    enable_diarize: Option<bool>,
-) -> Result<Transcript> {
-    tracing::debug!("Transcribe called with {:?}", options);
+fn round_to_places(value: f64, places: i32) -> f64 {
+    let factor = 10f64.powi(places);
+    (value * factor).round() / factor
+}
 
-    if !PathBuf::from(options.path.clone()).exists() {
-        bail!("audio file doesn't exist")
+// Convert centiseconds to seconds (1 centisecond = 10ms)
+fn cs_to_s(cs: i64) -> f64 {
+    cs as f64 * 0.01
+}
+
+// Returns true if `s` is *only* a control marker like "[_BEG_]" or "[_TT_320]".
+fn is_whole_control_token(s: &str) -> bool {
+    let t = s.trim_matches('\0').trim();
+    if !(t.starts_with("[_") && t.ends_with(']')) { return false; }
+    // ensure inner is all A–Z / 0–9 / '_' (how whisper.cpp prints its markers)
+    let inner = &t[2..t.len()-1];
+    !inner.is_empty() && inner.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_')
+}
+
+// Strips embedded control markers from tokens (e.g., remove "[_TT_320]" from middle of text)
+fn strip_embedded_control_markers(s: &str) -> String {
+    let mut result = String::new();
+    let mut i = 0;
+    let chars: Vec<char> = s.chars().collect();
+    while i < chars.len() {
+        if i + 1 < chars.len() && chars[i] == '[' && chars[i + 1] == '_' {
+            // Find the closing ']'
+            let mut j = i + 2;
+            while j < chars.len() && chars[j] != ']' {
+                j += 1;
+            }
+            if j < chars.len() {
+                // Check if it's a valid control marker
+                let marker: String = chars[i..=j].iter().collect();
+                if is_whole_control_token(&marker) {
+                    // Skip this marker
+                    i = j + 1;
+                    continue;
+                }
+            }
+        }
+        result.push(chars[i]);
+        i += 1;
+    }
+    result
+}
+
+fn get_word_timestamps(seg: &WhisperSegment) -> Vec<WordTimestamp> {
+    #[derive(Clone)]
+    struct Tok {
+        text: String,
+        p: f32,
+        t0: f64,
+        t1: f64,
+        anchor: Option<f64>,
     }
 
-    // Read the mono wav file
-    let original_samples = audio::read_wav(options.path.clone().into())
-        .context("failed to decode normalized WAV to PCM samples")?;
+    let n = seg.n_tokens() as usize;
+    let mut toks: Vec<Tok> = Vec::with_capacity(n);
 
-    // Convert to f32 samples for whisper.cpp
-    let mut samples = vec![0.0f32; original_samples.len()];
-    whisper_rs::convert_integer_to_float_audio(&original_samples, &mut samples)?;
+    for i in 0..n {
+        if let Some(tok) = seg.get_token(i as i32) {
+            let raw = tok.to_str_lossy().map(|c| c.into_owned()).unwrap_or_default();
 
-    // Create whisper.cpp context
-    let ctx = create_context(
-        model_path.as_path(),
-        &options.model, // requires model name for dtw preset
-        options.gpu_device,
-        options.enable_gpu,
-        options.enable_dtw,
-        Some(samples.len()),
-    )
-    .map_err(|e| format!("Failed to create Whisper context: {}", e))?;
+            // Skip whole control tokens like "[_BEG_]" or "[_TT_320]"
+            if is_whole_control_token(&raw) {
+                continue;
+            }
 
+            // Remove embedded control markers that hitchhike inside printable tokens
+            let clean = strip_embedded_control_markers(&raw);
+
+            // Skip if nothing printable remains
+            if clean.trim_matches('\0').trim().is_empty() {
+                continue;
+            }
+
+            let td = tok.token_data();
+            // Use DTW anchor only if present (>= 0). Whisper uses -1 when DTW is not computed.
+            let anchor = if td.t_dtw >= 0 { Some(cs_to_s(td.t_dtw)) } else { None };
+
+            toks.push(Tok {
+                text: clean,
+                p: td.p,
+                t0: cs_to_s(td.t0),
+                t1: cs_to_s(td.t1),
+                anchor,
+            });
+        }
+    }
+
+    if toks.is_empty() {
+        return Vec::new();
+    }
+
+    // Token bounds via DTW midpoints when anchors exist; fallback to t0/t1.
+    let mut bounds = Vec::with_capacity(toks.len());
+    for i in 0..toks.len() {
+        let a_prev = i.checked_sub(1).and_then(|j| toks.get(j)).and_then(|t| t.anchor);
+        let a_here = toks[i].anchor;
+        let a_next = toks.get(i + 1).and_then(|t| t.anchor);
+
+        let start = match (a_prev, a_here) {
+            (Some(l), Some(c)) => 0.5 * (l + c),
+            _ => toks[i].t0,
+        };
+        let end = match (a_here, a_next) {
+            (Some(c), Some(r)) => 0.5 * (c + r),
+            _ => toks[i].t1,
+        };
+        bounds.push((start, end));
+    }
+
+    // Group into words using "leading space/newline starts a new word".
+    let mut words = Vec::<WordTimestamp>::new();
+    let mut cur = String::new();
+    let mut ps: Vec<f32> = Vec::new();
+    let mut w_start = bounds[0].0;
+    let mut w_end = bounds[0].1;
+    let mut started = false;
+
+    for (i, t) in toks.iter().enumerate() {
+        let s = t.text.as_str();
+        let new_word_boundary = s.starts_with(' ') || s.starts_with('\n');
+
+        if new_word_boundary && started {
+            let w = cur.trim();
+            if !w.is_empty() {
+                let p = (!ps.is_empty()).then(|| ps.iter().copied().sum::<f32>() / ps.len() as f32);
+                words.push(WordTimestamp { word: w.to_string(), start: w_start, end: w_end, probability: p });
+            }
+            cur.clear();
+            ps.clear();
+            started = false;
+        }
+
+        if !started {
+            w_start = bounds[i].0;
+            started = true;
+        }
+        w_end = bounds[i].1;
+        cur.push_str(s);
+        ps.push(t.p);
+    }
+
+    if started {
+        let w = cur.trim();
+        if !w.is_empty() {
+            let p = (!ps.is_empty()).then(|| ps.iter().copied().sum::<f32>() / ps.len() as f32);
+            words.push(WordTimestamp { word: w.to_string(), start: w_start, end: w_end, probability: p });
+        }
+    }
+
+    words
+}
+
+// Pass in path to normalised mono 16k PCM16 audio file
+pub async fn run_transcription_pipeline(
+    ctx: WhisperContext,
+    speech_segments: Vec<SpeechSegment>,
+    options: TranscribeOptions,
+    diarize_options: Option<DiarizeOptions>,
+    progress_callback: Option<Box<dyn Fn(i32) + Send + Sync>>,
+    new_segment_callback: Option<Box<dyn Fn(Segment)>>,
+    abort_callback: Option<Box<dyn Fn() -> bool + Send>>,
+) -> Result<Vec<Segment>> {
+    tracing::debug!("Transcribe called with {:?}", options);
+
+    // Create Whisper state
     let mut state = ctx.create_state().context("failed to create state")?;
     let mut params = setup_params(&options);
-    
-    let st = std::time::Instant::now();
+
+    // Initialize diarize components if diarize is enabled
+    let mut embedding_manager: Option<pyannote_rs::EmbeddingManager> = None;
+    let mut extractor: Option<pyannote_rs::EmbeddingExtractor> = None;
+    if let Some(diarize_options) = diarize_options {
+        embedding_manager = Some(pyannote_rs::EmbeddingManager::new(diarize_options.max_speakers));
+        extractor = Some(pyannote_rs::EmbeddingExtractor::new(&diarize_options.embedding_model_path)
+            .map_err(|e| eyre!("{:?}", e))?);
+    }
 
     // DEFINE ABORT CALLBACK
     if let Some(abort_callback) = abort_callback {
@@ -246,74 +408,70 @@ pub async fn run_transcription_pipeline<R: Runtime>(
         }
     });
 
-    state.full(params, &samples).context("failed to transcribe")?;
-    let _et = std::time::Instant::now();
-
-    tracing::debug!("getting segments count...");
-    let num_segments = state.full_n_segments();
-    if num_segments == 0 {
-        bail!("no segments found!")
-    }
-    tracing::debug!("found {} sentence segments", num_segments);
-
-    // Counters for statistics
-    let mut empty_segments = 0usize;
-    let mut total_chars = 0usize;
+    let mut empty_segments = 0;
+    let mut total_chars = 0;
 
     // List for subtitle segments
-    let mut segments: Vec<Segment> = Vec::with_capacity(num_segments as usize);
+    let mut segments: Vec<Segment> = Vec::with_capacity(speech_segments.len());
+    let mut previous_text: Option<String> = None;
 
-    for (seg_idx, seg) in state.as_iter().enumerate() { // iterator over `WhisperSegment`
-        let mut text = seg.to_str_lossy().map(|c| c.into_owned()).unwrap_or_default();
-        text = text.trim_start().to_string(); // remove Whisper’s typical leading space
+    for (i, seg) in speech_segments.iter().enumerate() {
+        let original_samples = seg.samples;
 
-        // Filter out [BLANK_AUDIO]
-        if text == "[BLANK_AUDIO]" {
-            continue;
+        // Convert float samples back to integer samples for embedding
+        let mut samples = vec![0.0f32; original_samples.len()];
+        whisper_rs::convert_integer_to_float_audio(&original_samples, &mut samples)?;
+
+        let mut params = params.clone();
+        if diarize_options.is_none() && let Some(ref previous_text) = previous_text {
+            params.set_initial_prompt(previous_text);
         }
+        state.full(params.clone(), &samples).context("failed to transcribe")?;
+        let num_segments = state.full_n_segments();
+        tracing::debug!("found {} sentence segments", num_segments);
 
-        // For the very first segment (or if prev ended with .?!), capitalize:
-        if seg_idx == 0 /* or your prev-ender test */ {
-            text = sentence_case_first_alpha(&text);
-        }
+        let whisper_segment: WhisperSegment = state.get_segment(0).unwrap();
 
-        // quick t0/t1 preview (centiseconds → seconds)
-        let t0_frames = seg.start_timestamp();
-        let t1_frames = seg.end_timestamp();
-        let approx_start = cs_to_s(t0_frames);
-        let approx_end   = cs_to_s(t1_frames);
+        // Get the transcribed text from the state
+        let mut text = whisper_segment.to_str().unwrap();
+        text = text.trim_start(); // remove Whisper's typical leading space
+
+        // Use the segment's start/end times directly
+        let approx_start = seg.start;
+        let approx_end = seg.end;
         let preview: String = text.chars().take(40).collect();
     
         tracing::debug!(
-            "Seg {} approx [{:.2}-{:.2}] text_len={} preview={:?}",
-            seg_idx, approx_start, approx_end, text.len(), preview
+            "Seg approx [{:.2}-{:.2}] text_len={} preview={:?}",
+            approx_start, approx_end, text.len(), preview
         );
     
         if text.trim().is_empty() {
             empty_segments += 1;
             tracing::warn!(
-                "Seg {} has empty/whitespace text in [{:.2}-{:.2}]",
-                seg_idx, approx_start, approx_end
+                "Seg has empty/whitespace text in [{:.2}-{:.2}]",
+                approx_start, approx_end
             );
         }
     
-        // word timestamps (DTW if enabled at context creation)
-        let mut word_timestamps = get_word_timestamps_from_segment(&seg, options.enable_dtw.unwrap_or(false));
+        let mut word_timestamps: Vec<WordTimestamp> = Vec::new();
+        if let Some(true) = options.word_timestamps {
+            word_timestamps = get_word_timestamps(&whisper_segment);
+        }
+
+        // if word timestamps are empty, fall back to segment bounds
         let (seg_start, seg_end, words_opt) = if word_timestamps.is_empty() {
             tracing::debug!(
-                "Seg {} word_timestamps empty; falling back to segment bounds [{:.2}-{:.2}]",
-                seg_idx, approx_start, approx_end
+                "Seg word_timestamps empty; falling back to segment bounds [{:.2}-{:.2}]",
+                approx_start, approx_end
             );
             (approx_start, approx_end, None)
         } else {
-            if seg_idx == 0 {
-                word_timestamps.first_mut().unwrap().word = sentence_case_first_alpha(&word_timestamps.first().unwrap().word);
-            }
             let s = word_timestamps.first().map(|w| w.start).unwrap_or(approx_start);
             let e = word_timestamps.last().map(|w| w.end).unwrap_or(s);
             tracing::debug!(
-                "Seg {} word_timestamps count={} bounds [{:.2}-{:.2}]",
-                seg_idx, word_timestamps.len(), s, e
+                "Seg word_timestamps count={} bounds [{:.2}-{:.2}]",
+                word_timestamps.len(), s, e
             );
             (s, e, Some(word_timestamps))
         };
@@ -332,28 +490,71 @@ pub async fn run_transcription_pipeline<R: Runtime>(
             }
         }
 
+        // If diarize is enabled, add speaker label to segment
+        let mut speaker_id = None;
+        if num_segments > 0 && let Some(diarize_options) = diarize_options {
+            // Compute embedding
+            let extractor = extractor.as_ref().unwrap();
+            let embedding_result = match extractor.compute(&original_samples) {
+                Ok(result) => Some(result.collect()),
+                Err(error) => {
+                    tracing::error!("error: {:?}", error);
+                    tracing::trace!(
+                        "start = {:.2}, end = {:.2}, speaker = ?",
+                        seg.start,
+                        seg.end
+                    );
+                    None
+                }
+            };
+
+            // Find speaker
+            let embedding_manager = embedding_manager.as_ref().unwrap();
+            let speaker = if let Some(embedding_result) = embedding_result {
+                if embedding_manager.get_all_speakers().len() == diarize_options.max_speakers {
+                    embedding_manager
+                        .get_best_speaker_match(embedding_result)
+                        .map(|r| r.to_string())
+                        .unwrap_or("?".into())
+                } else {
+                    embedding_manager
+                        .search_speaker(embedding_result, diarize_options.threshold)
+                        .map(|r| r.to_string())
+                        .unwrap_or("?".into())
+                }
+            } else {
+                "?".into()
+            };
+            speaker_id = Some(speaker);
+        }
+
         total_chars += text.len();
-    
-        segments.push(Segment {
-            speaker_id: None,
+        previous_text = Some(text.clone());
+        let segment = Segment {
+            speaker_id,
             start: seg_start,
             end: seg_end,
             text,
             words: words_opt,
-        });
+        };
+
+        // Emit segment to callback
+        if let Some(ref new_segment_callback) = new_segment_callback {
+            new_segment_callback(segment);
+        }
+
+        // Emit progress to callback
+        if let Some(ref progress_callback) = progress_callback {
+            tracing::trace!("progress: {} * {} / 100", i, speech_segments.len());
+            let progress = ((i + 1) as f64 / speech_segments.len() as f64 * 100.0) as i32;
+            tracing::trace!("progress diarize: {}", progress);
+            progress_callback(progress);
+        }
+        segments.push(segment);
     }
 
-    tracing::info!(
-        "Transcription summary: segments={}, empty_segments={}, total_chars={}",
-        num_segments, empty_segments, total_chars
-    );
-    if empty_segments == num_segments as usize {
-        tracing::warn!("All segments are empty/whitespace. Upstream audio or decoding may be silent/corrupted.");
-    }
-
+    // Offset all segments and words based on defined offset (if any) - useful for aligning with larger audio than the input
     let offset = options.offset.unwrap_or(0.0);
-
-    // loop through and offset to each word and segment, then round
     for segment in segments.iter_mut() {
         segment.start = round_to_places(segment.start + offset, 3);
         segment.end = round_to_places(segment.end + offset, 3);
@@ -364,6 +565,10 @@ pub async fn run_transcription_pipeline<R: Runtime>(
             }
         }
     }
+
+    tracing::debug!("Empty segments: {}", empty_segments);
+    tracing::debug!("Total characters: {}", total_chars);
+    tracing::debug!("Segments: {}", segments.len());
 
     return Ok(segments);
 }

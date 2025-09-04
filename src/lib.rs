@@ -1,5 +1,7 @@
+pub mod audio;
 pub mod engine;
 pub mod model_manager;
+pub mod transcribe;
 pub mod vad;
 pub mod types;
 
