@@ -2,8 +2,7 @@ use whisper_rs::{WhisperVadContext, WhisperVadContextParams, WhisperVadParams};
 use crate::types::SpeechSegment;
 use eyre::Result;
 
-/// Detect speech segments with Silero VAD via whisper-rs.
-/// Input `int_samples` must be mono i16 at 16_000 Hz.
+/// Detect speech segments with Silero VAD via whisper-rs. Input `int_samples` must be mono i16 at 16_000 Hz.
 pub fn get_segments(vad_model: &str, int_samples: &[i16]) -> Result<Vec<SpeechSegment>> {
     // Convert entire integer buffer to f32 for VAD processing
     let mut samples = vec![0.0f32; int_samples.len()];
@@ -16,11 +15,10 @@ pub fn get_segments(vad_model: &str, int_samples: &[i16]) -> Result<Vec<SpeechSe
     let mut vad = WhisperVadContext::new(vad_model, ctx)?; // segments_from_samples needs &mut self.
 
     // 3) Tune VAD behavior (defaults are reasonable; adjust if needed)
-    let vadp = WhisperVadParams::new();
-    // Examples:
+    let mut vadp = WhisperVadParams::new();
+    vadp.set_min_silence_duration(200); // ms
     // vadp.set_threshold(0.5);
     // vadp.set_min_speech_duration(250);    // ms
-    // vadp.set_min_silence_duration(100);   // ms
     // vadp.set_speech_pad(30);              // ms
     // vadp.set_samples_overlap(0.10);       // seconds of overlap between segments
     // vadp.set_max_speech_duration(f32::MAX);

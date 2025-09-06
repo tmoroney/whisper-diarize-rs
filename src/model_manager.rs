@@ -1,4 +1,4 @@
-use crate::engine::ProgressFn;
+use crate::types::LabeledProgressFn;
 use eyre::{bail, eyre, Context, Result};
 use hf_hub::api::sync::ApiBuilder;
 use hf_hub::api::Progress as HubProgress;
@@ -13,18 +13,20 @@ struct DownloadProgress<'a> {
     scale: f32,
     current: usize,
     total: usize,
-    progress_cb: Option<&'a ProgressFn>,
+    progress_cb: Option<&'a LabeledProgressFn>,
+    label: &'a str,
     is_cancelled: Option<&'a (dyn Fn() -> bool + Send + Sync)>,
     on_cancel_cleanup: Option<Box<dyn Fn() + Send + Sync + 'a>>, // e.g., cleanup stale locks
 }
 
 impl<'a> DownloadProgress<'a> {
     fn new(
-        progress_cb: Option<&'a ProgressFn>,
+        progress_cb: Option<&'a LabeledProgressFn>,
         is_cancelled: Option<&'a (dyn Fn() -> bool + Send + Sync)>,
         offset: f32,
         scale: f32,
         on_cancel_cleanup: Option<Box<dyn Fn() + Send + Sync + 'a>>,
+        label: &'a str,
     ) -> Self {
         Self {
             offset,
@@ -34,6 +36,7 @@ impl<'a> DownloadProgress<'a> {
             progress_cb,
             is_cancelled,
             on_cancel_cleanup,
+            label,
         }
     }
 
@@ -44,7 +47,7 @@ impl<'a> DownloadProgress<'a> {
             } else {
                 self.offset + (self.current as f32 / self.total as f32) * self.scale
             };
-            cb(pct as i32);
+            cb(pct as i32, self.label);
         }
     }
 }
@@ -98,7 +101,7 @@ impl ModelManager {
     pub async fn ensure_whisper_model(
         &self,
         model: &str,
-        progress: Option<&ProgressFn>,
+        progress: Option<&LabeledProgressFn>,
         is_cancelled: Option<&(dyn Fn() -> bool + Send + Sync)>,
     ) -> Result<PathBuf> {
         // Early cancellation
@@ -119,23 +122,25 @@ impl ModelManager {
 
         let model_path = if needs_coreml {
             // 0..70 for main model
-            self.ensure_hub_model_range(
+            self.ensure_hub_model(
                 "ggerganov/whisper.cpp",
                 &filename,
                 progress,
                 is_cancelled,
                 0.0,
                 70.0,
+                &format!("Whisper {}", model),
             )
             .await?
         } else {
-            self.ensure_hub_model_range(
+            self.ensure_hub_model(
                 "ggerganov/whisper.cpp",
                 &filename,
                 progress,
                 is_cancelled,
                 0.0,
                 100.0,
+                &format!("Whisper {}", model),
             )
             .await?
         };
@@ -146,16 +151,40 @@ impl ModelManager {
             if cfg!(target_os = "macos") {
                 let coreml_file = format!("ggml-{}-encoder.mlmodelc.zip", model);
 
+                // Fast path: if the extracted CoreML encoder directory already exists in cache,
+                // skip downloading the zip entirely.
+                let extracted_name = coreml_file.trim_end_matches(".zip");
+                if let Ok(cache_root) = self.model_cache_dir() {
+                    let base = cache_root
+                        .join("models--ggerganov--whisper.cpp")
+                        .join("snapshots");
+                    if base.exists() {
+                        if let Ok(entries) = fs::read_dir(&base) {
+                            for entry in entries.flatten() {
+                                let snap = entry.path();
+                                if !snap.is_dir() { continue; }
+                                let extracted_path = snap.join(extracted_name);
+                                if extracted_path.exists() {
+                                    // Do NOT emit progress here to avoid starting progress
+                                    // when everything is already cached.
+                                    return Ok(model_path);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // 70..90 for the CoreML archive download. If it fails (e.g., network), log and continue
                 // with the main model instead of failing the entire operation.
                 let coreml_zip_path = match self
-                    .ensure_hub_model_range(
+                    .ensure_hub_model(
                         "ggerganov/whisper.cpp",
                         &coreml_file,
                         progress,
                         is_cancelled,
                         70.0,
                         20.0,
+                        "CoreML encoder",
                     )
                     .await
                 {
@@ -165,13 +194,13 @@ impl ModelManager {
                             "Warning: CoreML encoder download failed ({}). Proceeding without CoreML encoder.",
                             e
                         );
-                        if let Some(cb) = progress { cb(100); }
+                        if let Some(cb) = progress { cb(100, "CoreML encoder"); }
                         return Ok(model_path);
                     }
                 };
 
                 // Progress at 90% (download done, start extracting)
-                if let Some(cb) = progress { cb(90); }
+                if let Some(cb) = progress { cb(90, "CoreML encoder"); }
 
                 // Extract to same directory as the cached zip
                 let extract_dir = coreml_zip_path
@@ -206,26 +235,16 @@ impl ModelManager {
                         count += 1;
                         if let Some(cb) = progress {
                             let pct = 90.0 + (count as f32 / total as f32) * 10.0;
-                            cb(pct as i32);
+                            cb(pct as i32, "CoreML encoder");
                         }
                     }
 
-                    // After extraction, delete the zip (symlink target and link if needed)
-                    let md = fs::symlink_metadata(&coreml_zip_path)
-                        .context("Failed to stat CoreML zip")?;
-                    if md.file_type().is_symlink() {
-                        let target = fs::read_link(&coreml_zip_path)
-                            .context("Failed to read CoreML zip symlink")?;
-                        let blob = if target.is_absolute() { target } else { extract_dir.join(target) };
-                        if blob.exists() { let _ = fs::remove_file(&blob); }
-                        let _ = fs::remove_file(&coreml_zip_path);
-                    } else {
-                        let _ = fs::remove_file(&coreml_zip_path);
-                    }
+                    // After extraction, delete the zip and its blob target (if symlinked)
+                    let _ = remove_snapshot_file_and_blob(&coreml_zip_path);
                 }
 
                 // Final completion
-                if let Some(cb) = progress { cb(100); }
+                if let Some(cb) = progress { cb(100, "CoreML encoder"); }
             }
         }
 
@@ -236,23 +255,27 @@ impl ModelManager {
     /// Uses the ggml-org/whisper-vad repository and the file `ggml-silero-v5.1.2.bin`.
     pub async fn ensure_vad_model(
         &self,
-        progress: Option<&ProgressFn>,
+        progress: Option<&LabeledProgressFn>,
         is_cancelled: Option<&(dyn Fn() -> bool + Send + Sync)>,
     ) -> Result<PathBuf> {
-        self.ensure_hub_model(
-            "ggml-org/whisper-vad",
-            "ggml-silero-v5.1.2.bin",
-            progress,
-            is_cancelled,
-        )
-        .await
+        self
+            .ensure_hub_model(
+                "ggml-org/whisper-vad",
+                "ggml-silero-v5.1.2.bin",
+                progress,
+                is_cancelled,
+                0.0,
+                100.0,
+                "VAD Model",
+            )
+            .await
     }
 
     pub async fn ensure_diarize_models(
         &mut self,
         seg_url: &str,
         emb_url: &str,
-        progress: Option<&ProgressFn>,
+        progress: Option<&LabeledProgressFn>,
         is_cancelled: Option<&(dyn Fn() -> bool + Send + Sync)>,
     ) -> Result<(PathBuf, PathBuf)> {
         if let Some(is_cancelled) = is_cancelled { if is_cancelled() { bail!("Cancelled"); } }
@@ -263,18 +286,18 @@ impl ModelManager {
 
         let seg_path = model_dir.join(&seg_name);
         if !seg_path.exists() {
-            if let Some(cb) = progress { cb(5); }
+            if let Some(cb) = progress { cb(5, "Diarize Models"); }
             download_to(&seg_path, seg_url).await?;
-            if let Some(cb) = progress { cb(50); }
+            if let Some(cb) = progress { cb(50, "Diarize Models"); }
         }
 
         if let Some(is_cancelled) = is_cancelled { if is_cancelled() { bail!("Cancelled"); } }
 
         let emb_path = model_dir.join(&emb_name);
         if !emb_path.exists() {
-            if let Some(cb) = progress { cb(55); }
+            if let Some(cb) = progress { cb(55, "Diarize Models"); }
             download_to(&emb_path, emb_url).await?;
-            if let Some(cb) = progress { cb(100); }
+            if let Some(cb) = progress { cb(100, "Diarize Models"); }
         }
 
         Ok((seg_path, emb_path))
@@ -342,14 +365,15 @@ impl ModelManager {
     }
 
     /// Downloads a model file from HuggingFace Hub with caching and progress support over a custom range.
-    async fn ensure_hub_model_range(
+    async fn ensure_hub_model(
         &self,
         repo_id: &str,
         filename: &str,
-        progress: Option<&ProgressFn>,
+        progress: Option<&LabeledProgressFn>,
         is_cancelled: Option<&(dyn Fn() -> bool + Send + Sync)>,
         offset: f32,
         scale: f32,
+        label: &str,
     ) -> Result<PathBuf> {
         // Early cancellation
         if let Some(is_cancelled) = is_cancelled {
@@ -368,7 +392,8 @@ impl ModelManager {
         // hitting the network. We do this conservatively and validate before returning.
         if let Some(cached) = self.find_cached_file(repo_id, filename)? {
             if validate_model_file(&cached).is_ok() {
-                if let Some(cb) = progress { cb((offset + scale) as i32); }
+                // Do NOT emit progress here; caller requested to only start progress
+                // reporting if a download actually occurs.
                 return Ok(cached);
             }
         }
@@ -390,6 +415,7 @@ impl ModelManager {
                 let this = self;
                 move || { this.cleanup_stale_locks().ok(); }
             })),
+            label,
         );
 
         let path = repo
@@ -405,18 +431,18 @@ impl ModelManager {
             let _ = remove_snapshot_file_and_blob(&path);
             self.cleanup_stale_locks().ok();
 
-            let prog2 = DownloadProgress::new(progress, is_cancelled, offset, scale, None);
+            let prog2 = DownloadProgress::new(progress, is_cancelled, offset, scale, None, label);
             let path2 = repo
                 .download_with_progress(filename, prog2)
                 .with_context(|| format!("Failed to re-download '{}' from '{}'", filename, repo_id))?;
             validate_model_file(&path2)
                 .with_context(|| format!("Model validation failed for '{}' from '{}'", filename, repo_id))?;
 
-            if let Some(cb) = progress { cb((offset + scale) as i32); }
+            if let Some(cb) = progress { cb((offset + scale) as i32, label); }
             return Ok(path2);
         }
 
-        if let Some(cb) = progress { cb((offset + scale) as i32); }
+        if let Some(cb) = progress { cb((offset + scale) as i32, label); }
         Ok(path)
     }
 
@@ -442,19 +468,6 @@ impl ModelManager {
             }
         }
         Ok(None)
-    }
-
-    /// Downloads a model file from HuggingFace Hub with caching and full 0..100% progress support
-    pub async fn ensure_hub_model(
-        &self,
-        repo_id: &str,
-        filename: &str,
-        progress: Option<&ProgressFn>,
-        is_cancelled: Option<&(dyn Fn() -> bool + Send + Sync)>,
-    ) -> Result<PathBuf> {
-        self
-            .ensure_hub_model_range(repo_id, filename, progress, is_cancelled, 0.0, 100.0)
-            .await
     }
 }
 

@@ -1,9 +1,8 @@
 use std::path::PathBuf;
 use eyre::eyre;
-use crate::types::SpeechSegment;
-use crate::types::DiarizeOptions;
+use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, ProgressFn, NewSegmentFn};
 
-pub type ProgressFn = dyn Fn(i32) + Send + Sync;
+// callback type aliases are defined in crate::types
 
 #[derive(Clone, Debug)]
 pub struct EngineConfig {
@@ -17,16 +16,18 @@ pub struct EngineConfig {
 }
 
 pub struct Callbacks<'a> {
+    pub download_progress: Option<&'a LabeledProgressFn>,
     pub transcribe_progress: Option<&'a ProgressFn>,
-    pub diarize_progress: Option<&'a ProgressFn>,
-    pub is_cancelled: Option<&'a (dyn Fn() -> bool + Send + Sync)>,
+    pub new_segment_callback: Option<&'a NewSegmentFn>,
+    pub is_cancelled: Option<Box<dyn Fn() -> bool + Send + Sync + 'static>>,
 }
 
 impl<'a> Default for Callbacks<'a> {
     fn default() -> Self {
         Self {
+            download_progress: None,
             transcribe_progress: None,
-            diarize_progress: None,
+            new_segment_callback: None,
             is_cancelled: None,
         }
     }
@@ -45,7 +46,7 @@ impl Engine {
         }
     }
 
-    pub async fn transcribe(
+    pub async fn transcribe_audio(
         &mut self,
         audio_path: &str,
         options: crate::TranscribeOptions,
@@ -56,14 +57,11 @@ impl Engine {
             eyre::bail!("audio file doesn't exist")
         }
 
-        println!("audio file exists");
-
         println!("ensure Whisper model");
-
         // Ensure/download Whisper model
         let _model_path = self
             .models
-            .ensure_whisper_model(&options.model, cb.transcribe_progress, cb.is_cancelled)
+            .ensure_whisper_model(&options.model, cb.download_progress, cb.is_cancelled.as_deref())
             .await?;
 
         println!("ensure Whisper model done");
@@ -73,10 +71,6 @@ impl Engine {
         let mut speech_segments: Vec<SpeechSegment> = Vec::new();
         let mut diarize_options: Option<DiarizeOptions> = None;
 
-        println!("enable_diarize: {:?}", options.enable_diarize);
-        println!("enable_vad: {:?}", options.enable_vad);
-
-        println!("pre-processing audio...");
         if let Some(true) = options.enable_diarize {
             let seg_url = "https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/segmentation-3.0.onnx";
             let emb_url = "https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/wespeaker_en_voxceleb_CAM++.onnx";
@@ -86,14 +80,19 @@ impl Engine {
                 (Some(seg), Some(emb)) => (PathBuf::from(seg), PathBuf::from(emb)),
                 _ => self
                     .models
-                    .ensure_diarize_models(seg_url, emb_url, cb.diarize_progress, cb.is_cancelled)
+                    .ensure_diarize_models(seg_url, emb_url, cb.download_progress, cb.is_cancelled.as_deref())
                     .await?,
             };
 
+            let threshold = options
+                .advanced
+                .as_ref()
+                .and_then(|a| a.diarize_threshold)
+                .unwrap_or(0.5);
             diarize_options = Some(DiarizeOptions {
                 segment_model_path: seg_path.to_string_lossy().to_string(),
                 embedding_model_path: emb_path.to_string_lossy().to_string(),
-                threshold: options.advanced.as_ref().unwrap().diarize_threshold.unwrap_or(0.5),
+                threshold,
                 max_speakers: options.max_speakers.unwrap_or(2),
             });
 
@@ -113,7 +112,7 @@ impl Engine {
             } else {
                 self
                     .models
-                    .ensure_vad_model(cb.transcribe_progress, cb.is_cancelled)
+                    .ensure_vad_model(cb.download_progress, cb.is_cancelled.as_deref())
                     .await?
             };
 
@@ -149,9 +148,9 @@ impl Engine {
             speech_segments,
             options,
             diarize_options,
-            None,
-            None,
-            None,
+            cb.transcribe_progress,
+            cb.new_segment_callback,
+            cb.is_cancelled,
         )
         .await
     }

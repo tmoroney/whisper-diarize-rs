@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+// Shared callback types
+pub type ProgressFn = dyn Fn(i32) + Send + Sync;                 // general integer progress
+pub type LabeledProgressFn = dyn Fn(i32, &str) + Send + Sync;     // download progress with label
+pub type NewSegmentFn = dyn Fn(&Segment) + Send + Sync;           // new segment notifications
+
 #[derive(Clone, Debug, Default)]
 pub struct AdvancedTranscribe {
     pub sampling_strategy: Option<String>, // "beam_search" or "greedy"

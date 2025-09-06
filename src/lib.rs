@@ -8,5 +8,5 @@ pub mod types;
 // Re-exports (crate users only need these)
 pub use engine::{Engine, EngineConfig, Callbacks};
 pub use vad::get_segments;
-pub use types::{TranscribeOptions, DiarizeOptions, Segment, WordTimestamp};
+pub use types::{TranscribeOptions, Segment, WordTimestamp};
 pub use model_manager::ModelManager;

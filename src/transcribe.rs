@@ -1,4 +1,4 @@
-use crate::types::{SpeechSegment, Segment, WordTimestamp, TranscribeOptions, DiarizeOptions};
+use crate::types::{SpeechSegment, Segment, WordTimestamp, TranscribeOptions, DiarizeOptions, ProgressFn, NewSegmentFn};
 use eyre::{Result, bail, WrapErr, OptionExt};
 use std::path::Path;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperSegment, DtwParameters, DtwMode, DtwModelPreset};
@@ -177,6 +177,7 @@ pub fn create_context(
         };
 
         let dtw_mem_size = calculate_dtw_mem_size(num_samples.unwrap_or(0));
+        println!("dtw mem size: {} MB", dtw_mem_size / 1024 / 1024);
         ctx_params.dtw_parameters(DtwParameters {
             mode: DtwMode::ModelPreset { model_preset },
             dtw_mem_size,
@@ -374,9 +375,9 @@ pub async fn run_transcription_pipeline(
     speech_segments: Vec<SpeechSegment>,
     options: TranscribeOptions,
     diarize_options: Option<DiarizeOptions>,
-    progress_callback: Option<Box<dyn Fn(i32) + Send + Sync>>,
-    new_segment_callback: Option<Box<dyn Fn(Segment)>>,
-    abort_callback: Option<Box<dyn Fn() -> bool + Send>>,
+    progress_callback: Option<&ProgressFn>,
+    new_segment_callback: Option<&NewSegmentFn>,
+    abort_callback: Option<Box<dyn Fn() -> bool + Send + Sync>>,
 ) -> Result<Vec<Segment>> {
     tracing::debug!("Transcribe called with {:?}", options);
 
@@ -410,162 +411,169 @@ pub async fn run_transcription_pipeline(
     let mut empty_segments = 0;
     let mut total_chars = 0;
 
+    // Apply this offset directly when producing segment and word timestamps
+    let user_offset = options.offset.unwrap_or(0.0);
+
     // List for subtitle segments
     let mut segments: Vec<Segment> = Vec::with_capacity(speech_segments.len());
     let mut previous_text: Option<String> = None;
 
-    for (i, seg) in speech_segments.iter().enumerate() {
-        let original_samples = seg.samples.clone();
+    for (i, speech_segment) in speech_segments.iter().enumerate() {
+        let original_samples = speech_segment.samples.clone();
 
         // Convert float samples back to integer samples for embedding
         let mut samples = vec![0.0f32; original_samples.len()];
         whisper_rs::convert_integer_to_float_audio(&original_samples, &mut samples)?;
 
-        let mut params = params.clone();
-        if diarize_options.is_none() && let Some(ref previous_text) = previous_text {
+        // Set initial prompt if available (borrow to avoid moving out of Option)
+        if let Some(ref previous_text) = previous_text {
             params.set_initial_prompt(previous_text);
         }
+
+        // Transcribe the segment
         state.full(params.clone(), &samples).context("failed to transcribe")?;
         let num_segments = state.full_n_segments();
         tracing::debug!("found {} sentence segments", num_segments);
 
-        let whisper_segment: WhisperSegment = state.get_segment(0).unwrap();
+        // Base offset for this chunk relative to the full audio timeline,
+        // including any user-specified global offset
+        let base_offset = speech_segment.start + user_offset;
 
-        // Get the transcribed text from the state
-        let mut text: String = whisper_segment.to_str().unwrap().to_string();
-        text = text.trim_start().to_string(); // remove Whisper's typical leading space
+        for seg in state.as_iter() {
+            // Get the transcribed text from the state
+            let mut text: String = seg.to_str().unwrap().to_string();
+            text = text.trim_start().to_string(); // remove Whisper's typical leading space
 
-        // Use the segment's start/end times directly
-        let approx_start = seg.start;
-        let approx_end = seg.end;
-        let preview: String = text.chars().take(40).collect();
+            // Use the segment's start/end times (convert from centiseconds to seconds)
+            // and offset by the speech segment's start to get absolute times
+            let approx_start = base_offset + cs_to_s(seg.start_timestamp());
+            let approx_end = base_offset + cs_to_s(seg.end_timestamp());
     
-        tracing::debug!(
-            "Seg approx [{:.2}-{:.2}] text_len={} preview={:?}",
-            approx_start, approx_end, text.len(), preview
-        );
-    
-        if text.trim().is_empty() {
-            empty_segments += 1;
-            tracing::warn!(
-                "Seg has empty/whitespace text in [{:.2}-{:.2}]",
-                approx_start, approx_end
-            );
-        }
-    
-        let mut word_timestamps: Vec<WordTimestamp> = Vec::new();
-        if let Some(true) = options.word_timestamps {
-            word_timestamps = get_word_timestamps(&whisper_segment);
-        }
-
-        // if word timestamps are empty, fall back to segment bounds
-        let (seg_start, seg_end, words_opt) = if word_timestamps.is_empty() {
             tracing::debug!(
-                "Seg word_timestamps empty; falling back to segment bounds [{:.2}-{:.2}]",
-                approx_start, approx_end
+                "Seg approx [{:.2}-{:.2}] text_len={} text={:?}",
+                approx_start, approx_end, text.len(), text
             );
-            (approx_start, approx_end, None)
-        } else {
-            let s = word_timestamps.first().map(|w| w.start).unwrap_or(approx_start);
-            let e = word_timestamps.last().map(|w| w.end).unwrap_or(s);
-            tracing::debug!(
-                "Seg word_timestamps count={} bounds [{:.2}-{:.2}]",
-                word_timestamps.len(), s, e
-            );
-            (s, e, Some(word_timestamps))
-        };
     
-        // prevent slight overlaps with previous segment
-        if let Some(last) = segments.last_mut() {
-            if last.end > seg_start {
-                last.end = seg_start;
+            if text.trim().is_empty() {
+                empty_segments += 1;
+                tracing::warn!(
+                    "Seg has empty/whitespace text in [{:.2}-{:.2}]",
+                    approx_start, approx_end
+                );
             }
-            if let Some(words) = &mut last.words {
-                if let Some(last_word) = words.last_mut() {
-                    if last_word.end > last.end {
-                        last_word.end = last.end;
+        
+            let mut word_timestamps: Vec<WordTimestamp> = Vec::new();
+            if let Some(true) = options.word_timestamps {
+                word_timestamps = get_word_timestamps(&seg);
+            }
+
+            // if word timestamps are empty, fall back to segment bounds
+            let (seg_start, seg_end, words_opt) = if word_timestamps.is_empty() {
+                tracing::debug!(
+                    "Seg word_timestamps empty; falling back to segment bounds [{:.2}-{:.2}]",
+                    approx_start, approx_end
+                );
+                (approx_start, approx_end, None)
+            } else {
+                // Offset word timestamps to absolute timeline
+                for w in &mut word_timestamps {
+                    w.start += base_offset;
+                    w.end += base_offset;
+                }
+                let s = word_timestamps.first().map(|w| w.start).unwrap_or(approx_start);
+                let e = word_timestamps.last().map(|w| w.end).unwrap_or(s);
+                tracing::debug!(
+                    "Seg word_timestamps count={} bounds [{:.2}-{:.2}]",
+                    word_timestamps.len(), s, e
+                );
+                (s, e, Some(word_timestamps))
+            };
+        
+            // prevent slight overlaps with previous segment
+            if let Some(last) = segments.last_mut() {
+                if last.end > seg_start {
+                    last.end = seg_start;
+                }
+                if let Some(words) = &mut last.words {
+                    if let Some(last_word) = words.last_mut() {
+                        if last_word.end > last.end {
+                            last_word.end = last.end;
+                        }
                     }
                 }
             }
-        }
 
-        // If diarize is enabled, add speaker label to segment
-        let mut speaker_id = None;
-        if num_segments > 0 && let Some(ref diarize_options) = diarize_options {
-            // Compute embedding
-            let extractor = extractor.as_mut().unwrap();
-            let embedding_result = match extractor.compute(&original_samples) {
-                Ok(result) => Some(result.collect()),
-                Err(error) => {
-                    tracing::error!("error: {:?}", error);
-                    tracing::trace!(
-                        "start = {:.2}, end = {:.2}, speaker = ?",
-                        seg.start,
-                        seg.end
-                    );
-                    None
-                }
-            };
+            // If diarize is enabled, add speaker label to segment
+            let mut speaker_id = None;
+            if num_segments > 0 && let Some(ref diarize_options) = diarize_options {
+                // Compute embedding
+                let extractor = extractor.as_mut().unwrap();
+                let embedding_result = match extractor.compute(&original_samples) {
+                    Ok(result) => Some(result.collect()),
+                    Err(error) => {
+                        tracing::error!("error: {:?}", error);
+                        tracing::trace!(
+                            "start = {:.2}, end = {:.2}, speaker = ?",
+                            seg.start_timestamp(),
+                            seg.end_timestamp()
+                        );
+                        None
+                    }
+                };
 
-            // Find speaker
-            let embedding_manager = embedding_manager.as_mut().unwrap();
-            let speaker = if let Some(embedding_result) = embedding_result {
-                if embedding_manager.get_all_speakers().len() == diarize_options.max_speakers {
-                    embedding_manager
-                        .get_best_speaker_match(embedding_result)
-                        .map(|r| r.to_string())
-                        .unwrap_or("?".into())
+                // Find speaker
+                let embedding_manager = embedding_manager.as_mut().unwrap();
+                let speaker = if let Some(embedding_result) = embedding_result {
+                    if embedding_manager.get_all_speakers().len() == diarize_options.max_speakers {
+                        embedding_manager
+                            .get_best_speaker_match(embedding_result)
+                            .map(|r| r.to_string())
+                            .unwrap_or("?".into())
+                    } else {
+                        embedding_manager
+                            .search_speaker(embedding_result, diarize_options.threshold)
+                            .map(|r| r.to_string())
+                            .unwrap_or("?".into())
+                    }
                 } else {
-                    embedding_manager
-                        .search_speaker(embedding_result, diarize_options.threshold)
-                        .map(|r| r.to_string())
-                        .unwrap_or("?".into())
-                }
-            } else {
-                "?".into()
-            };
-            speaker_id = Some(speaker);
-        }
-
-        total_chars += text.len();
-        if !text.trim().is_empty() {
-            previous_text = Some(text.clone());
-        }
-        let segment = Segment {
-            speaker_id,
-            start: seg_start,
-            end: seg_end,
-            text,
-            words: words_opt,
-        };
-
-        // Emit segment to callback
-        if let Some(ref new_segment_callback) = new_segment_callback {
-            new_segment_callback(segment.clone());
-        }
-
-        // Emit progress to callback
-        if let Some(ref progress_callback) = progress_callback {
-            tracing::trace!("progress: {} * {} / 100", i, speech_segments.len());
-            let progress = ((i + 1) as f64 / speech_segments.len() as f64 * 100.0) as i32;
-            tracing::trace!("progress diarize: {}", progress);
-            progress_callback(progress);
-        }
-        segments.push(segment);
-    }
-
-    // Offset all segments and words based on defined offset (if any) - useful for aligning with larger audio than the input
-    let offset = options.offset.unwrap_or(0.0);
-    for segment in segments.iter_mut() {
-        segment.start = round_to_places(segment.start + offset, 3);
-        segment.end = round_to_places(segment.end + offset, 3);
-        if let Some(words) = &mut segment.words {
-            for word in words.iter_mut() {
-                word.start = round_to_places(word.start + offset, 3);
-                word.end = round_to_places(word.end + offset, 3);
+                    "?".into()
+                };
+                speaker_id = Some(speaker);
             }
+
+            total_chars += text.len();
+
+            // Update previous_text before moving `text` into the Segment
+            if text.trim().is_empty() {
+                previous_text = None;
+            } else {
+                previous_text = Some(text.clone());
+            }
+
+            let segment = Segment {
+                speaker_id,
+                start: seg_start,
+                end: seg_end,
+                text,
+                words: words_opt,
+            };
+
+            // Emit segment to callback
+            if let Some(cb) = new_segment_callback {
+                cb(&segment);
+            }
+
+            // Emit progress to callback
+            if let Some(progress_callback) = progress_callback {
+                tracing::trace!("progress: {} * {} / 100", i, speech_segments.len());
+                let progress = ((i + 1) as f64 / speech_segments.len() as f64 * 100.0) as i32;
+                progress_callback(progress);
+            }
+            segments.push(segment);
         }
     }
+
+    // Note: final per-segment offset loop removed; offsets are applied inline during construction.
 
     tracing::debug!("Empty segments: {}", empty_segments);
     tracing::debug!("Total characters: {}", total_chars);
