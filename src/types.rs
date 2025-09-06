@@ -28,12 +28,12 @@ pub struct TranscribeOptions {
 impl Default for TranscribeOptions {
     fn default() -> Self {
         Self {
-            offset: None,
+            offset: Some(0.0),
             model: "base".to_string(), // Default to base model
-            lang: None,
-            translate: None,
-            word_timestamps: None,
-            enable_vad: None,
+            lang: Some("auto".to_string()),
+            translate: Some(false),
+            word_timestamps: Some(true),
+            enable_vad: Some(true),
             enable_diarize: None,
             max_speakers: None,
             advanced: None,

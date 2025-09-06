@@ -37,3 +37,8 @@ windows = ["vulkan", "directml"]  # Whisper GPU acceleration via Vulkan (AMD/Int
 linux = ["vulkan"]
 
 # Note: Had issues with OpenBLAS + Vulkan, so removed it
+
+default = ["mac-aarch"]
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

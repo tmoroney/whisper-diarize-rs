@@ -32,6 +32,7 @@ fn setup_params(options: &TranscribeOptions) -> FullParams {
     };
     tracing::debug!("sampling strategy: {:?}", sampling_strategy);
 
+    // Create initial params
     let mut params = FullParams::new(sampling_strategy);
 
     // Basic config
@@ -53,32 +54,32 @@ fn setup_params(options: &TranscribeOptions) -> FullParams {
         params.set_translate(true);
     }
 
-    let advanced = options.advanced.as_ref().unwrap();
-
-    if let Some(temp) = advanced.temperature {
-        params.set_temperature(temp);
-    }
-
-    // Optional temperature (only greedy sampling supports temperature > 0)
-    if advanced.sampling_strategy.as_deref() == Some("greedy") {
+    if let Some(advanced) = options.advanced.as_ref() {
         if let Some(temp) = advanced.temperature {
             params.set_temperature(temp);
         }
-    }
 
-    // Optional max text context
-    if let Some(ctx) = advanced.max_text_ctx {
-        params.set_n_max_text_ctx(ctx);
-    }
+        // Optional temperature (only greedy sampling supports temperature > 0)
+        if advanced.sampling_strategy.as_deref() == Some("greedy") {
+            if let Some(temp) = advanced.temperature {
+                params.set_temperature(temp);
+            }
+        }
 
-    // Optional initial prompt
-    if let Some(ref prompt) = advanced.init_prompt {
-        params.set_initial_prompt(prompt);
-    }
+        // Optional max text context
+        if let Some(ctx) = advanced.max_text_ctx {
+            params.set_n_max_text_ctx(ctx);
+        }
 
-    // Optional thread count
-    if let Some(threads) = advanced.n_threads {
-        params.set_n_threads(threads);
+        // Optional initial prompt
+        if let Some(ref prompt) = advanced.init_prompt {
+            params.set_initial_prompt(prompt);
+        }
+
+        // Optional thread count
+        if let Some(threads) = advanced.n_threads {
+            params.set_n_threads(threads);
+        }
     }
 
     params

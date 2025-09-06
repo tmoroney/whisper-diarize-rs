@@ -146,8 +146,9 @@ impl ModelManager {
             if cfg!(target_os = "macos") {
                 let coreml_file = format!("ggml-{}-encoder.mlmodelc.zip", model);
 
-                // 70..90 for the CoreML archive download
-                let coreml_zip_path = self
+                // 70..90 for the CoreML archive download. If it fails (e.g., network), log and continue
+                // with the main model instead of failing the entire operation.
+                let coreml_zip_path = match self
                     .ensure_hub_model_range(
                         "ggerganov/whisper.cpp",
                         &coreml_file,
@@ -156,7 +157,18 @@ impl ModelManager {
                         70.0,
                         20.0,
                     )
-                    .await?;
+                    .await
+                {
+                    Ok(p) => p,
+                    Err(e) => {
+                        eprintln!(
+                            "Warning: CoreML encoder download failed ({}). Proceeding without CoreML encoder.",
+                            e
+                        );
+                        if let Some(cb) = progress { cb(100); }
+                        return Ok(model_path);
+                    }
+                };
 
                 // Progress at 90% (download done, start extracting)
                 if let Some(cb) = progress { cb(90); }
@@ -352,6 +364,15 @@ impl ModelManager {
 
         let cache_dir = self.model_cache_dir()?;
 
+        // Fast path: if a valid cached file exists under snapshots, return it immediately to avoid
+        // hitting the network. We do this conservatively and validate before returning.
+        if let Some(cached) = self.find_cached_file(repo_id, filename)? {
+            if validate_model_file(&cached).is_ok() {
+                if let Some(cb) = progress { cb((offset + scale) as i32); }
+                return Ok(cached);
+            }
+        }
+
         let api = ApiBuilder::new()
             .with_cache_dir(cache_dir)
             .build()
@@ -399,6 +420,30 @@ impl ModelManager {
         Ok(path)
     }
 
+    // Attempt to locate a cached file in the hf-hub cache layout without performing any network requests.
+    // Cache layout: <cache_root>/models--{owner}--{repo}/snapshots/<rev>/{filename}
+    fn find_cached_file(&self, repo_id: &str, filename: &str) -> Result<Option<PathBuf>> {
+        let cache_root = self.model_cache_dir()?;
+        let mut parts = repo_id.splitn(2, '/');
+        let owner = parts.next().unwrap_or("");
+        let repo = parts.next().unwrap_or("");
+        if owner.is_empty() || repo.is_empty() {
+            return Ok(None);
+        }
+        let base = cache_root.join(format!("models--{}--{}", owner, repo)).join("snapshots");
+        if !base.exists() { return Ok(None); }
+        for entry in fs::read_dir(&base).context("Failed to read snapshots dir")? {
+            let entry = entry?;
+            let snap = entry.path();
+            if !snap.is_dir() { continue; }
+            let candidate = snap.join(filename);
+            if candidate.exists() {
+                return Ok(Some(candidate));
+            }
+        }
+        Ok(None)
+    }
+
     /// Downloads a model file from HuggingFace Hub with caching and full 0..100% progress support
     pub async fn ensure_hub_model(
         &self,
@@ -431,7 +476,10 @@ fn validate_model_file(path: &Path) -> Result<()> {
         bail!("Model blob target does not exist: {}", blob_path.display());
     }
     let md = fs::metadata(&blob_path).context("metadata failed")?;
-    if md.len() < 1_000_000 {
+    // Note: Some valid models (e.g., Silero VAD) are quite small (< 1 MB). Use a conservative
+    // lower bound to catch obviously truncated files while permitting small, valid models.
+    const MIN_BYTES: u64 = 100_000; // 100 KB
+    if md.len() < MIN_BYTES {
         bail!("Model blob seems too small ({} bytes): {}", md.len(), blob_path.display());
     }
     let mut f = fs::File::open(&blob_path).context("open failed")?;

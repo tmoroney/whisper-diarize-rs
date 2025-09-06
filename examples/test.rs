@@ -1,8 +1,9 @@
-use whisper_diarize_rs::{Engine, EngineConfig};
+use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions};
 
-fn main() -> Result<(), eyre::Report> {
+#[tokio::main]
+async fn main() -> Result<(), eyre::Report> {
     let audio_path = std::env::args().nth(1).expect("Please specify audio file");
-    let engine = Engine::new(EngineConfig {
+    let mut engine = Engine::new(EngineConfig {
         cache_dir: "./cache".into(),
         use_gpu: true,
         gpu_device: None,
@@ -12,7 +13,16 @@ fn main() -> Result<(), eyre::Report> {
         diarize_embedding_model_path: None,
     });
 
-    engine.transcribe(&audio_path, crate::TranscribeOptions::default(), crate::Callbacks::default())?;
+    let segments = engine
+        .transcribe(&audio_path, TranscribeOptions::default(), None)
+        .await?;
+
+    println!("Transcribed {} segments", segments.len());
+
+    // print all segments
+    for segment in segments {
+        println!("{}", segment.text);
+    }
 
     Ok(())
 }
