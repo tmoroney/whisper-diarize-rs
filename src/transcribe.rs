@@ -4,7 +4,6 @@ use std::path::Path;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperSegment, DtwParameters, DtwMode, DtwModelPreset};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Mutex;
-use std::sync::atomic::AtomicI32;
 use eyre::eyre;
 
 type ProgressCallbackType = once_cell::sync::Lazy<Mutex<Option<Box<dyn Fn(i32) + Send + Sync>>>>;
@@ -16,7 +15,6 @@ pub static SHOULD_CANCEL: once_cell::sync::Lazy<Mutex<bool>> =
 
 // Latest progress values updated from hot compute loops (blocking threads)
 // Emission to the frontend is throttled via a periodic Tokio task.
-static LATEST_TRANSCRIBE_PROGRESS: AtomicI32 = AtomicI32::new(0);
 
 fn setup_params(options: &TranscribeOptions) -> FullParams {
     // Determine the beam size or best_of value, defaulting to 5
@@ -388,7 +386,7 @@ pub async fn run_transcription_pipeline(
     // Initialize diarize components if diarize is enabled
     let mut embedding_manager: Option<pyannote_rs::EmbeddingManager> = None;
     let mut extractor: Option<pyannote_rs::EmbeddingExtractor> = None;
-    if let Some(diarize_options) = diarize_options {
+    if let Some(ref diarize_options) = diarize_options {
         embedding_manager = Some(pyannote_rs::EmbeddingManager::new(diarize_options.max_speakers));
         extractor = Some(pyannote_rs::EmbeddingExtractor::new(&diarize_options.embedding_model_path)
             .map_err(|e| eyre!("{:?}", e))?);
@@ -416,7 +414,7 @@ pub async fn run_transcription_pipeline(
     let mut previous_text: Option<String> = None;
 
     for (i, seg) in speech_segments.iter().enumerate() {
-        let original_samples = seg.samples;
+        let original_samples = seg.samples.clone();
 
         // Convert float samples back to integer samples for embedding
         let mut samples = vec![0.0f32; original_samples.len()];
@@ -433,8 +431,8 @@ pub async fn run_transcription_pipeline(
         let whisper_segment: WhisperSegment = state.get_segment(0).unwrap();
 
         // Get the transcribed text from the state
-        let mut text = whisper_segment.to_str().unwrap();
-        text = text.trim_start(); // remove Whisper's typical leading space
+        let mut text: String = whisper_segment.to_str().unwrap().to_string();
+        text = text.trim_start().to_string(); // remove Whisper's typical leading space
 
         // Use the segment's start/end times directly
         let approx_start = seg.start;
@@ -492,9 +490,9 @@ pub async fn run_transcription_pipeline(
 
         // If diarize is enabled, add speaker label to segment
         let mut speaker_id = None;
-        if num_segments > 0 && let Some(diarize_options) = diarize_options {
+        if num_segments > 0 && let Some(ref diarize_options) = diarize_options {
             // Compute embedding
-            let extractor = extractor.as_ref().unwrap();
+            let extractor = extractor.as_mut().unwrap();
             let embedding_result = match extractor.compute(&original_samples) {
                 Ok(result) => Some(result.collect()),
                 Err(error) => {
@@ -509,7 +507,7 @@ pub async fn run_transcription_pipeline(
             };
 
             // Find speaker
-            let embedding_manager = embedding_manager.as_ref().unwrap();
+            let embedding_manager = embedding_manager.as_mut().unwrap();
             let speaker = if let Some(embedding_result) = embedding_result {
                 if embedding_manager.get_all_speakers().len() == diarize_options.max_speakers {
                     embedding_manager
@@ -529,7 +527,9 @@ pub async fn run_transcription_pipeline(
         }
 
         total_chars += text.len();
-        previous_text = Some(text.clone());
+        if !text.trim().is_empty() {
+            previous_text = Some(text.clone());
+        }
         let segment = Segment {
             speaker_id,
             start: seg_start,
@@ -540,7 +540,7 @@ pub async fn run_transcription_pipeline(
 
         // Emit segment to callback
         if let Some(ref new_segment_callback) = new_segment_callback {
-            new_segment_callback(segment);
+            new_segment_callback(segment.clone());
         }
 
         // Emit progress to callback

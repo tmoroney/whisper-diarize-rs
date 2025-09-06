@@ -1,8 +1,5 @@
 use std::path::PathBuf;
 use eyre::eyre;
-use crate::audio;
-use whisper_rs;
-use crate::transcribe::create_context;
 use crate::types::SpeechSegment;
 use crate::types::DiarizeOptions;
 
@@ -15,6 +12,8 @@ pub struct EngineConfig {
     pub gpu_device: Option<i32>, // GPU device id, default 0
     pub enable_dtw: bool, // Enable DTW for better word timestamps (works best for larger models)
     pub vad_model_path: Option<String>, // Path to Voice Activity Detection (VAD) model
+    pub diarize_segment_model_path: Option<String>, // Optional path to diarization segmentation model; if None, it will be downloaded
+    pub diarize_embedding_model_path: Option<String>, // Optional path to diarization embedding model; if None, it will be downloaded
 }
 
 pub struct Callbacks<'a> {
@@ -26,17 +25,13 @@ pub struct Callbacks<'a> {
 pub struct Engine {
     cfg: EngineConfig,
     models: crate::model_manager::ModelManager,
-    diarize_segment_model_path: Option<PathBuf>,
-    diarize_embedding_model_path: Option<PathBuf>,
 }
 
 impl Engine {
     pub fn new(cfg: EngineConfig) -> Self {
-        Self { 
-            models: crate::model_manager::ModelManager::new(cfg.clone()), 
+        Self {
+            models: crate::model_manager::ModelManager::new(cfg.cache_dir.clone()),
             cfg,
-            diarize_segment_model_path: None,
-            diarize_embedding_model_path: None,
         }
     }
 
@@ -46,7 +41,7 @@ impl Engine {
         options: crate::TranscribeOptions,
         cb: Callbacks<'_>,
     ) -> eyre::Result<Vec<crate::Segment>> {
-        if !std::path::PathBuf::from(audio_path.clone()).exists() {
+        if !std::path::PathBuf::from(audio_path).exists() {
             eyre::bail!("audio file doesn't exist")
         }
 
@@ -58,30 +53,33 @@ impl Engine {
 
         let original_samples = crate::audio::read_wav(&audio_path)?;
 
+        // VAD model path will be resolved on-demand if needed
+
         let mut speech_segments: Vec<SpeechSegment> = Vec::new();
-        let mut num_samples: usize = 0;
         let mut diarize_options: Option<DiarizeOptions> = None;
 
         if let Some(true) = options.enable_diarize {
             let seg_url = "https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/segmentation-3.0.onnx";
             let emb_url = "https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/wespeaker_en_voxceleb_CAM++.onnx";
-            let (seg_path, emb_path) = self
-                .models
-                .ensure_diarize_models(seg_url, emb_url, cb.diarize_progress, cb.is_cancelled)
-                .await?;
-            self.diarize_segment_model_path = Some(seg_path);
-            self.diarize_embedding_model_path = Some(emb_path);
+            let (seg_path, emb_path) = if let (Some(seg), Some(emb)) = (&self.cfg.diarize_segment_model_path, &self.cfg.diarize_embedding_model_path) {
+                (PathBuf::from(seg), PathBuf::from(emb))
+            } else {
+                self
+                    .models
+                    .ensure_diarize_models(seg_url, emb_url, cb.diarize_progress, cb.is_cancelled)
+                    .await?
+            };
 
             diarize_options = Some(DiarizeOptions {
-                segment_model_path: self.diarize_segment_model_path.clone().unwrap().to_string_lossy().to_string(),
-                embedding_model_path: self.diarize_embedding_model_path.clone().unwrap().to_string_lossy().to_string(),
+                segment_model_path: seg_path.to_string_lossy().to_string(),
+                embedding_model_path: emb_path.to_string_lossy().to_string(),
                 threshold: options.advanced.as_ref().unwrap().diarize_threshold.unwrap_or(0.5),
                 max_speakers: options.max_speakers.unwrap_or(2),
             });
 
             // Get speech segments as an iterator and collect them all
             let diarize_segments_iter =
-                pyannote_rs::get_segments(&original_samples, 16000, &self.diarize_segment_model_path.as_ref().unwrap()).map_err(|e| eyre!("{:?}", e))?;
+                pyannote_rs::get_segments(&original_samples, 16000, &seg_path).map_err(|e| eyre!("{:?}", e))?;
             let mut diarize_segments: Vec<pyannote_rs::Segment> = Vec::new();
             for segment_result in diarize_segments_iter {
                 let segment = segment_result.map_err(|e| eyre!("{:?}", e))?;
@@ -96,8 +94,20 @@ impl Engine {
                     samples: segment.samples.clone(),
                 });
             }
-        } else if let Some(true) = options.enable_vad && let Some(ref vad_model_path) = self.cfg.vad_model_path {
-            speech_segments = crate::vad::get_segments(&vad_model_path, &original_samples)
+        } else if let Some(true) = options.enable_vad {
+            // Use provided VAD model path if present; otherwise download via ModelManager
+            let vad_model_path: PathBuf = if let Some(ref p) = self.cfg.vad_model_path {
+                PathBuf::from(p)
+            } else {
+                self
+                    .models
+                    .ensure_vad_model(cb.transcribe_progress, cb.is_cancelled)
+                    .await?
+            };
+
+            // `vad::get_segments` expects a &str path; convert from PathBuf
+            let vad_model_path_str = vad_model_path.to_string_lossy().to_string();
+            speech_segments = crate::vad::get_segments(&vad_model_path_str, &original_samples)
                 .map_err(|e| eyre!("{:?}", e))?;
         }
         else {
