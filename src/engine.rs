@@ -57,14 +57,11 @@ impl Engine {
             eyre::bail!("audio file doesn't exist")
         }
 
-        println!("ensure Whisper model");
         // Ensure/download Whisper model
         let _model_path = self
             .models
             .ensure_whisper_model(&options.model, cb.download_progress, cb.is_cancelled.as_deref())
             .await?;
-
-        println!("ensure Whisper model done");
 
         let original_samples = crate::audio::read_wav(&audio_path)?;
 
@@ -84,16 +81,16 @@ impl Engine {
                     .await?,
             };
 
-            let threshold = options
-                .advanced
-                .as_ref()
-                .and_then(|a| a.diarize_threshold)
-                .unwrap_or(0.5);
+            // Set diarize options
+            let threshold = options.advanced.as_ref().and_then(|a| a.diarize_threshold).unwrap_or(0.5);
             diarize_options = Some(DiarizeOptions {
                 segment_model_path: seg_path.to_string_lossy().to_string(),
                 embedding_model_path: emb_path.to_string_lossy().to_string(),
                 threshold,
-                max_speakers: options.max_speakers.unwrap_or(2),
+                max_speakers: match options.max_speakers {
+                    Some(0) | None => usize::MAX,
+                    Some(n) => n,
+                },
             });
 
             // Consume the lazy pyannote_rs iterator: the for-loop calls `next()` under the hood,

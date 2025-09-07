@@ -503,7 +503,7 @@ pub async fn run_transcription_pipeline(
                 }
             }
 
-            // If diarize is enabled, add speaker label to segment
+            // Embedding and speaker identification (speaker diarization) - if enabled
             let mut speaker_id = None;
             if num_segments > 0 && let Some(ref diarize_options) = diarize_options {
                 // Compute embedding
@@ -543,12 +543,8 @@ pub async fn run_transcription_pipeline(
 
             total_chars += text.len();
 
-            // Update previous_text before moving `text` into the Segment
-            if text.trim().is_empty() {
-                previous_text = None;
-            } else {
-                previous_text = Some(text.clone());
-            }
+            // Update previous_text before moving `text` into the Segment (or None if empty)
+            previous_text = (!text.trim().is_empty()).then(|| text.clone());
 
             let segment = Segment {
                 speaker_id,
@@ -558,12 +554,12 @@ pub async fn run_transcription_pipeline(
                 words: words_opt,
             };
 
-            // Emit segment to callback
+            // Emit new segment to callback
             if let Some(cb) = new_segment_callback {
                 cb(&segment);
             }
 
-            // Emit progress to callback
+            // Emit progress update to callback
             if let Some(progress_callback) = progress_callback {
                 tracing::trace!("progress: {} * {} / 100", i, speech_segments.len());
                 let progress = ((i + 1) as f64 / speech_segments.len() as f64 * 100.0) as i32;
@@ -573,7 +569,7 @@ pub async fn run_transcription_pipeline(
         }
     }
 
-    // Note: final per-segment offset loop removed; offsets are applied inline during construction.
+    // TODO: Add post-processing to format segments according to formatting options
 
     tracing::debug!("Empty segments: {}", empty_segments);
     tracing::debug!("Total characters: {}", total_chars);
