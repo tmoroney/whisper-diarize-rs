@@ -1,6 +1,6 @@
 use reqwest;
 use serde_json::Value;
-use crate::types::{Segment, WordTimestamp};
+use crate::types::{Segment, WordTimestamp, LabeledProgressFn};
 use futures::stream::{self, StreamExt};
 use tokio::time::{sleep, Duration};
 
@@ -176,6 +176,7 @@ pub async fn translate_segments(
     segments: &mut [Segment],
     from: &str,
     to: &str,
+    progress: Option<&LabeledProgressFn>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // Indices of non-empty segments to translate
     let mut indices: Vec<usize> = Vec::new();
@@ -190,24 +191,50 @@ pub async fn translate_segments(
 
     if inputs.is_empty() { return Ok(()); }
 
-    // Concurrent per-item translation with a small buffer to improve throughput
-    let concurrency: usize = 4;
-    let results: Vec<Result<String, Box<dyn std::error::Error>>> = stream::iter(inputs.into_iter())
-        .map(|txt| async move { translate_text(&txt, from, to).await })
-        .buffer_unordered(concurrency)
-        .collect()
-        .await;
+    // Progress setup
+    let total = inputs.len();
+    let mut completed: usize = 0;
+    let start_label = format!("Translating from {} to {}", from, to);
+    // Report start at 0%
+    if total > 0 {
+        if let Some(p) = progress { p(0, &start_label); }
+    }
 
-    // Map results back to segments by order
-    for (k, res) in results.into_iter().enumerate() {
+    // Translate concurrently with bounded concurrency; keep track of original order via enumerate index
+    let concurrency: usize = 4;
+    let mut out: Vec<Option<String>> = vec![None; total];
+    let mut stream = stream::iter(inputs.into_iter().enumerate())
+        .map(|(k, txt)| async move { (k, translate_text(&txt, from, to).await) })
+        .buffer_unordered(concurrency);
+
+    while let Some((k, res)) = stream.next().await {
+        match res {
+            Ok(tr) => {
+                out[k] = Some(tr);
+            }
+            Err(_e) => {
+                // Leave as None to keep original text on error
+            }
+        }
+        completed += 1;
+        // Incremental progress
+        let percent = ((completed as f64) / (total as f64) * 100.0).round() as i32;
+        if let Some(p) = progress { p(percent.min(99), &format!("{}", start_label)); }
+    }
+
+    // Apply results back to segments
+    for (k, maybe_tr) in out.into_iter().enumerate() {
         let seg_idx = indices[k];
-        if let Ok(tr) = res {
+        if let Some(tr) = maybe_tr {
             let seg = &mut segments[seg_idx];
             seg.text = tr;
             regenerate_words_uniform(seg);
-        } else {
-            // Leave original text on error
         }
+    }
+
+    // Completion progress
+    if total > 0 {
+        if let Some(p) = progress { p(100, "Translating complete"); }
     }
 
     Ok(())

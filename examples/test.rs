@@ -20,7 +20,7 @@ async fn main() -> Result<(), eyre::Report> {
     options.lang = Some("en".into());
     options.enable_vad = Some(true);
     options.enable_diarize = Some(false);
-    //options.translate_target = Some("fr".into());
+    options.translate_target = Some("fr".into());
 
     // TODO: add note in transcript to show that it's been translated (word timestamps are not accurate)
 

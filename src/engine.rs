@@ -157,11 +157,9 @@ impl Engine {
 
         if !whisper_to_en {
             if let Some(to_lang) = translate_to.as_deref() {
-                if let Some(p) = cb.progress { p(0, &format!("Translating from {} to {}", from_lang, to_lang)); }
-                crate::translate::translate_segments(segments.as_mut_slice(), &from_lang, to_lang)
+                crate::translate::translate_segments(segments.as_mut_slice(), &from_lang, to_lang, cb.progress)
                     .await
                     .map_err(|e| eyre!("{}", e))?;
-                if let Some(p) = cb.progress { p(100, "Translating complete"); }
             }
         }
 
