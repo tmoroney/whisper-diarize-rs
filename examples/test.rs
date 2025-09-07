@@ -5,15 +5,7 @@ use eyre::Result;
 async fn main() -> Result<(), eyre::Report> {
     whisper_rs::install_logging_hooks();
     let audio_path = std::env::args().nth(1).expect("Please specify audio file");
-    let mut engine = Engine::new(EngineConfig {
-        cache_dir: "./cache".into(),
-        use_gpu: true,
-        gpu_device: None,
-        enable_dtw: true,
-        vad_model_path: None,
-        diarize_segment_model_path: None,
-        diarize_embedding_model_path: None,
-    });
+    let mut engine = Engine::new(EngineConfig::default());
 
     let mut options = TranscribeOptions::default();
     options.model = "base.en".into();

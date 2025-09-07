@@ -7,12 +7,28 @@ use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, NewSegmentF
 #[derive(Clone, Debug)]
 pub struct EngineConfig {
     pub cache_dir: PathBuf, // Cache directory for downloaded models
-    pub use_gpu: bool, // Enable GPU acceleration
+    pub enable_dtw: Option<bool>, // Enable DTW for better word timestamps - this will disable flash attention
+    pub enable_flash_attn: Option<bool>, // Enable flash attention for faster inference (works best for larger models)
+    pub use_gpu: Option<bool>, // Enable GPU acceleration
     pub gpu_device: Option<i32>, // GPU device id, default 0
-    pub enable_dtw: bool, // Enable DTW for better word timestamps (works best for larger models)
     pub vad_model_path: Option<String>, // Path to Voice Activity Detection (VAD) model
     pub diarize_segment_model_path: Option<String>, // Optional path to diarization segmentation model; if None, it will be downloaded
     pub diarize_embedding_model_path: Option<String>, // Optional path to diarization embedding model; if None, it will be downloaded
+}
+
+impl EngineConfig {
+    pub fn default() -> Self {
+        Self {
+            cache_dir: "./cache".into(),
+            enable_dtw: Some(true),
+            enable_flash_attn: Some(false),
+            use_gpu: Some(true),
+            gpu_device: None,
+            vad_model_path: None,
+            diarize_segment_model_path: None,
+            diarize_embedding_model_path: None,
+        }
+    }
 }
 
 pub struct Callbacks<'a> {
@@ -133,8 +149,9 @@ impl Engine {
             _model_path.as_path(),
             &options.model,
             self.cfg.gpu_device,
-            Some(self.cfg.use_gpu),
-            Some(self.cfg.enable_dtw),
+            self.cfg.use_gpu,
+            self.cfg.enable_dtw,
+            self.cfg.enable_flash_attn,
             Some(num_samples),
         )
         .map_err(|e| eyre!("Failed to create Whisper context: {}", e))?;

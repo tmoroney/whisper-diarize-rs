@@ -1834,523 +1834,88 @@
   },
   {
     "start": 124.83,
-    "end": 0.26,
+    "end": 128.93,
     "text": "Les espèces semblables à des étoiles ne survivent que pendant environ 1 à 10 millions d'années.",
     "words": [
       {
         "word": "Les",
         "start": 124.83,
-        "end": 124.83
+        "end": 125.08624999999999
       },
       {
         "word": "espèces",
-        "start": 124.83,
-        "end": 124.83
+        "start": 125.08624999999999,
+        "end": 125.3425
       },
       {
         "word": "semblables",
-        "start": 124.83,
-        "end": 124.83
+        "start": 125.3425,
+        "end": 125.59875
       },
       {
         "word": "à",
-        "start": 124.83,
-        "end": 124.83
+        "start": 125.59875,
+        "end": 125.855
       },
       {
         "word": "des",
-        "start": 124.83,
-        "end": 124.83
+        "start": 125.855,
+        "end": 126.11125
       },
       {
         "word": "étoiles",
-        "start": 124.83,
-        "end": 124.83
+        "start": 126.11125,
+        "end": 126.3675
       },
       {
         "word": "ne",
-        "start": 124.83,
-        "end": 124.83
+        "start": 126.3675,
+        "end": 126.62375
       },
       {
         "word": "survivent",
-        "start": 124.83,
-        "end": 124.83
+        "start": 126.62375,
+        "end": 126.88
       },
       {
         "word": "que",
-        "start": 124.83,
-        "end": 124.83
+        "start": 126.88,
+        "end": 127.13625
       },
       {
         "word": "pendant",
-        "start": 124.83,
-        "end": 124.83
+        "start": 127.13625,
+        "end": 127.3925
       },
       {
         "word": "environ",
-        "start": 124.83,
-        "end": 124.83
+        "start": 127.3925,
+        "end": 127.64875
       },
       {
         "word": "1",
-        "start": 124.83,
-        "end": 124.83
+        "start": 127.64875,
+        "end": 127.905
       },
       {
         "word": "à",
-        "start": 124.83,
-        "end": 124.83
+        "start": 127.905,
+        "end": 128.16125
       },
       {
         "word": "10",
-        "start": 124.83,
-        "end": 124.83
+        "start": 128.16125,
+        "end": 128.41750000000002
       },
       {
         "word": "millions",
-        "start": 124.83,
-        "end": 124.83
+        "start": 128.41750000000002,
+        "end": 128.67375
       },
       {
         "word": "d'années.",
-        "start": 124.83,
-        "end": 124.83
-      }
-    ]
-  },
-  {
-    "start": 0.26,
-    "end": 30.0,
-    "text": "Avez-vous entendu parler du transhumanisme? ",
-    "words": [
-      {
-        "word": "Avez-vous",
-        "start": 0.26,
-        "end": 6.207999999999999
-      },
-      {
-        "word": "entendu",
-        "start": 6.207999999999999,
-        "end": 12.155999999999999
-      },
-      {
-        "word": "parler",
-        "start": 12.155999999999999,
-        "end": 18.104000000000003
-      },
-      {
-        "word": "du",
-        "start": 18.104000000000003,
-        "end": 24.052
-      },
-      {
-        "word": "transhumanisme?",
-        "start": 24.052,
-        "end": 30.0
-      }
-    ]
-  },
-  {
-    "start": 31.13,
-    "end": 60.0,
-    "text": "Le transhumanisme a des possibilités infinies, les scientifiques ont créé des bras bioniques, des animaux génétiquement améliorés et ont même suggéré l'idée d'immortalité numérique. ",
-    "words": [
-      {
-        "word": "Le",
-        "start": 31.13,
-        "end": 32.33291666666666
-      },
-      {
-        "word": "transhumanisme",
-        "start": 32.33291666666666,
-        "end": 33.53583333333333
-      },
-      {
-        "word": "a",
-        "start": 33.53583333333333,
-        "end": 34.738749999999996
-      },
-      {
-        "word": "des",
-        "start": 34.738749999999996,
-        "end": 35.94166666666666
-      },
-      {
-        "word": "possibilités",
-        "start": 35.94166666666666,
-        "end": 37.14458333333333
-      },
-      {
-        "word": "infinies,",
-        "start": 37.14458333333333,
-        "end": 38.3475
-      },
-      {
-        "word": "les",
-        "start": 38.3475,
-        "end": 39.55041666666666
-      },
-      {
-        "word": "scientifiques",
-        "start": 39.55041666666666,
-        "end": 40.75333333333333
-      },
-      {
-        "word": "ont",
-        "start": 40.75333333333333,
-        "end": 41.95625
-      },
-      {
-        "word": "créé",
-        "start": 41.95625,
-        "end": 43.159166666666664
-      },
-      {
-        "word": "des",
-        "start": 43.159166666666664,
-        "end": 44.36208333333333
-      },
-      {
-        "word": "bras",
-        "start": 44.36208333333333,
-        "end": 45.565
-      },
-      {
-        "word": "bioniques,",
-        "start": 45.565,
-        "end": 46.767916666666665
-      },
-      {
-        "word": "des",
-        "start": 46.767916666666665,
-        "end": 47.97083333333333
-      },
-      {
-        "word": "animaux",
-        "start": 47.97083333333333,
-        "end": 49.17375
-      },
-      {
-        "word": "génétiquement",
-        "start": 49.17375,
-        "end": 50.376666666666665
-      },
-      {
-        "word": "améliorés",
-        "start": 50.376666666666665,
-        "end": 51.57958333333333
-      },
-      {
-        "word": "et",
-        "start": 51.57958333333333,
-        "end": 52.7825
-      },
-      {
-        "word": "ont",
-        "start": 52.7825,
-        "end": 53.985416666666666
-      },
-      {
-        "word": "même",
-        "start": 53.985416666666666,
-        "end": 55.18833333333333
-      },
-      {
-        "word": "suggéré",
-        "start": 55.18833333333333,
-        "end": 56.39125
-      },
-      {
-        "word": "l'idée",
-        "start": 56.39125,
-        "end": 57.594166666666666
-      },
-      {
-        "word": "d'immortalité",
-        "start": 57.594166666666666,
-        "end": 58.79708333333333
-      },
-      {
-        "word": "numérique.",
-        "start": 58.79708333333333,
-        "end": 60.0
-      }
-    ]
-  },
-  {
-    "start": 60.25,
-    "end": 90.0,
-    "text": "L'Institut Allen de Seattle a terminé la recréation d'un cerveau de souris sur un ordinateur en mai 2020. Cet ordinateur cérébral peut réagir aux images et est la plus grande récréation cérébrale sur un ordinateur à ce jour. ",
-    "words": [
-      {
-        "word": "L'Institut",
-        "start": 60.25,
-        "end": 61.0328947368421
-      },
-      {
-        "word": "Allen",
-        "start": 61.0328947368421,
-        "end": 61.81578947368421
-      },
-      {
-        "word": "de",
-        "start": 61.81578947368421,
-        "end": 62.598684210526315
-      },
-      {
-        "word": "Seattle",
-        "start": 62.598684210526315,
-        "end": 63.381578947368425
-      },
-      {
-        "word": "a",
-        "start": 63.381578947368425,
-        "end": 64.16447368421052
-      },
-      {
-        "word": "terminé",
-        "start": 64.16447368421052,
-        "end": 64.94736842105263
-      },
-      {
-        "word": "la",
-        "start": 64.94736842105263,
-        "end": 65.73026315789474
-      },
-      {
-        "word": "recréation",
-        "start": 65.73026315789474,
-        "end": 66.51315789473685
-      },
-      {
-        "word": "d'un",
-        "start": 66.51315789473685,
-        "end": 67.29605263157895
-      },
-      {
-        "word": "cerveau",
-        "start": 67.29605263157895,
-        "end": 68.07894736842105
-      },
-      {
-        "word": "de",
-        "start": 68.07894736842105,
-        "end": 68.86184210526315
-      },
-      {
-        "word": "souris",
-        "start": 68.86184210526315,
-        "end": 69.64473684210526
-      },
-      {
-        "word": "sur",
-        "start": 69.64473684210526,
-        "end": 70.42763157894737
-      },
-      {
-        "word": "un",
-        "start": 70.42763157894737,
-        "end": 71.21052631578948
-      },
-      {
-        "word": "ordinateur",
-        "start": 71.21052631578948,
-        "end": 71.99342105263158
-      },
-      {
-        "word": "en",
-        "start": 71.99342105263158,
-        "end": 72.77631578947368
-      },
-      {
-        "word": "mai",
-        "start": 72.77631578947368,
-        "end": 73.5592105263158
-      },
-      {
-        "word": "2020.",
-        "start": 73.5592105263158,
-        "end": 74.34210526315789
-      },
-      {
-        "word": "Cet",
-        "start": 74.34210526315789,
-        "end": 75.125
-      },
-      {
-        "word": "ordinateur",
-        "start": 75.125,
-        "end": 75.90789473684211
-      },
-      {
-        "word": "cérébral",
-        "start": 75.90789473684211,
-        "end": 76.6907894736842
-      },
-      {
-        "word": "peut",
-        "start": 76.6907894736842,
-        "end": 77.47368421052632
-      },
-      {
-        "word": "réagir",
-        "start": 77.47368421052632,
-        "end": 78.25657894736842
-      },
-      {
-        "word": "aux",
-        "start": 78.25657894736842,
-        "end": 79.03947368421052
-      },
-      {
-        "word": "images",
-        "start": 79.03947368421052,
-        "end": 79.82236842105263
-      },
-      {
-        "word": "et",
-        "start": 79.82236842105263,
-        "end": 80.60526315789474
-      },
-      {
-        "word": "est",
-        "start": 80.60526315789474,
-        "end": 81.38815789473685
-      },
-      {
-        "word": "la",
-        "start": 81.38815789473685,
-        "end": 82.17105263157895
-      },
-      {
-        "word": "plus",
-        "start": 82.17105263157895,
-        "end": 82.95394736842105
-      },
-      {
-        "word": "grande",
-        "start": 82.95394736842105,
-        "end": 83.73684210526315
-      },
-      {
-        "word": "récréation",
-        "start": 83.73684210526315,
-        "end": 84.51973684210526
-      },
-      {
-        "word": "cérébrale",
-        "start": 84.51973684210526,
-        "end": 85.30263157894737
-      },
-      {
-        "word": "sur",
-        "start": 85.30263157894737,
-        "end": 86.08552631578948
-      },
-      {
-        "word": "un",
-        "start": 86.08552631578948,
-        "end": 86.86842105263158
-      },
-      {
-        "word": "ordinateur",
-        "start": 86.86842105263158,
-        "end": 87.65131578947368
-      },
-      {
-        "word": "à",
-        "start": 87.65131578947368,
-        "end": 88.4342105263158
-      },
-      {
-        "word": "ce",
-        "start": 88.4342105263158,
-        "end": 89.21710526315789
-      },
-      {
-        "word": "jour.",
-        "start": 89.21710526315789,
-        "end": 90.0
-      }
-    ]
-  },
-  {
-    "start": 90.28,
-    "end": 120.0,
-    "text": "Nous demandons que cela se produira-t-il jamais? ",
-    "words": [
-      {
-        "word": "Nous",
-        "start": 90.28,
-        "end": 94.52571428571429
-      },
-      {
-        "word": "demandons",
-        "start": 94.52571428571429,
-        "end": 98.77142857142857
-      },
-      {
-        "word": "que",
-        "start": 98.77142857142857,
-        "end": 103.01714285714286
-      },
-      {
-        "word": "cela",
-        "start": 103.01714285714286,
-        "end": 107.26285714285714
-      },
-      {
-        "word": "se",
-        "start": 107.26285714285714,
-        "end": 111.50857142857143
-      },
-      {
-        "word": "produira-t-il",
-        "start": 111.50857142857143,
-        "end": 115.75428571428571
-      },
-      {
-        "word": "jamais?",
-        "start": 115.75428571428571,
-        "end": 120.0
-      }
-    ]
-  },
-  {
-    "start": 120.28,
-    "end": 150.0,
-    "text": "L'immortalité numérique est-elle notre dernier espoir? ",
-    "words": [
-      {
-        "word": "L'immortalité",
-        "start": 120.28,
-        "end": 125.23333333333333
-      },
-      {
-        "word": "numérique",
-        "start": 125.23333333333333,
-        "end": 130.18666666666667
-      },
-      {
-        "word": "est-elle",
-        "start": 130.18666666666667,
-        "end": 135.14
-      },
-      {
-        "word": "notre",
-        "start": 135.14,
-        "end": 140.09333333333333
-      },
-      {
-        "word": "dernier",
-        "start": 140.09333333333333,
-        "end": 145.04666666666668
-      },
-      {
-        "word": "espoir?",
-        "start": 145.04666666666668,
-        "end": 150.0
+        "start": 128.67375,
+        "end": 128.93
       }
     ]
   }

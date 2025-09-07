@@ -5,7 +5,7 @@ use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextPar
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Mutex;
 use eyre::eyre;
-use crate::utils::cs_to_s;
+use crate::utils::{cs_to_s, calculate_dtw_mem_size};
 
 type ProgressCallbackType = once_cell::sync::Lazy<Mutex<Option<Box<dyn Fn(i32) + Send + Sync>>>>;
 static PROGRESS_CALLBACK: ProgressCallbackType = once_cell::sync::Lazy::new(|| Mutex::new(None));
@@ -86,62 +86,13 @@ fn setup_params(options: &TranscribeOptions) -> FullParams {
     params
 }
 
-/// Estimate a safe DTW working-set size (in bytes) for whisper.cpp DTW.
-/// Pass the result to `DtwParameters { dtw_mem_size, .. }`.
-fn calculate_dtw_mem_size(num_samples: usize) -> usize {
-    // Frame geometry at 16 kHz: 10 ms per frame → 160 samples per frame
-    const FRAME_SAMPLES: usize = 160;
-    let num_frames = (num_samples + FRAME_SAMPLES - 1) / FRAME_SAMPLES; // ceil division
-
-    // Memory model bits
-    const BYTES_F32: usize = 4;
-    const BYTES_I32: usize = 4;
-
-    // Rolling buffers + auxiliaries (cost, prev, scratch, etc.)
-    // Use 4 lanes to leave headroom on long segments/presets.
-    const LANES: usize = 4;
-
-    // Dynamic band: narrow for short audio, wider for long audio.
-    // Keeps quality while bounding memory.
-    let band_frames = match num_frames {
-        0..=15_000 => 96,    // ≤150 s
-        15_001..=45_000 => 128, // 150–450 s
-        _ => 160,            // >450 s
-    };
-
-    // Core DP working set (float costs) plus an int32 backtrack-ish buffer
-    let dp_bytes = num_frames
-        .saturating_mul(band_frames)
-        .saturating_mul(LANES)
-        .saturating_mul(BYTES_F32);
-
-    let bt_bytes = num_frames
-        .saturating_mul(BYTES_I32); // rough backtrack/indices budget
-
-    // Fixed baseline for internal scratch
-    const BASELINE_MB: usize = 24;
-    let base_bytes = BASELINE_MB * 1024 * 1024;
-
-    // Total and clamps
-    let total = base_bytes
-        .saturating_add(dp_bytes)
-        .saturating_add(bt_bytes);
-
-    let min_bytes = 24 * 1024 * 1024;   // 24 MB floor
-    let max_bytes = 768 * 1024 * 1024;  // 768 MB ceiling
-    let clamped = total.clamp(min_bytes, max_bytes);
-
-    // Align up to 8 MB so we never round *down* below requirement
-    const ALIGN: usize = 8 * 1024 * 1024;
-    (clamped + (ALIGN - 1)) & !(ALIGN - 1)
-}
-
 pub fn create_context(
     model_path: &Path,
     model_name: &str,
     gpu_device: Option<i32>,
     use_gpu: Option<bool>,
     enable_dtw: Option<bool>,
+    enable_flash_attn: Option<bool>,
     num_samples: Option<usize>,
 ) -> Result<WhisperContext> {
     tracing::debug!("open model...");
@@ -184,8 +135,8 @@ pub fn create_context(
             dtw_mem_size,
         });
     } else {
-        // Only enable flash attention if GPU is active and DTW is disabled
-        if use_gpu == Some(true) {
+        // Enable flash attention if DTW is disabled (and GPU is available)
+        if enable_flash_attn.unwrap_or(true) && use_gpu.unwrap_or(true) {
             ctx_params.flash_attn(true);
         }
     }
