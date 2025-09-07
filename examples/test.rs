@@ -19,15 +19,16 @@ async fn main() -> Result<(), eyre::Report> {
     options.model = "base.en".into();
     options.lang = Some("en".into());
     options.enable_vad = Some(true);
-    options.enable_diarize = Some(true);
+    options.enable_diarize = Some(false);
+    //options.translate_target = Some("fr".into());
 
-    // progress callback: prints integer percent updates from the transcription pipeline
+    // TODO: add note in transcript to show that it's been translated (word timestamps are not accurate)
+
+    // Unified progress callback: receives percent and a label
     fn on_new_segment(segment: &Segment) { println!("new segment: {}", segment.text); }
-    fn on_progress(p: i32) { println!("progress: {}%", p); }
-    fn on_download_progress(p: i32, _label: &str) { println!("download progress: {}% for {}", p, _label); }
+    fn on_progress(p: i32, label: &str) { println!("{}: {}%", label, p); }
     let callbacks = Callbacks {
-        download_progress: Some(&on_download_progress),
-        transcribe_progress: Some(&on_progress),
+        progress: Some(&on_progress),
         new_segment_callback: Some(&on_new_segment),
         is_cancelled: None,
     };
@@ -37,6 +38,14 @@ async fn main() -> Result<(), eyre::Report> {
         .await?;
 
     println!("Transcribed {} segments", segments.len());
+
+    for segment in &segments {
+        println!("{}", segment.text);
+    }
+
+    // save segments to json file
+    let json = serde_json::to_string_pretty(&segments)?;
+    std::fs::write("segments.json", json)?;
 
     Ok(())
 }

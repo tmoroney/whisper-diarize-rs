@@ -2470,6 +2470,7 @@ version = "0.1.0"
 dependencies = [
  "dirs 5.0.1",
  "eyre",
+ "futures",
  "hf-hub",
  "hound",
  "once_cell",
@@ -2478,6 +2479,7 @@ dependencies = [
  "regex",
  "reqwest 0.11.27",
  "serde",
+ "serde_json",
  "tokio",
  "tracing",
  "whisper-rs",

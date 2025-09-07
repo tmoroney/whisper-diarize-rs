@@ -22,7 +22,15 @@ pub struct TranscribeOptions {
     pub offset: Option<f64>, // Move all timestamps forward by this amount (seconds) - useful for aligning with video timestamps
     pub model: String,
     pub lang: Option<String>,
-    pub translate: Option<bool>, // Whisper will translate to English if true (cannot translate to other languages)
+
+    // If true, use Whisper's built-in translation-to-English during transcription.
+    // Ignored if `translate_target` is set to a non-English language.
+    pub whisper_to_english: Option<bool>,
+
+    // If set, perform a post-pass translation of segments to this target language using Google Translate.
+    // If set to "en", this takes precedence over `whisper_to_english` (for explicit control).
+    pub translate_target: Option<String>,
+
     pub word_timestamps: Option<bool>, // Enable word-level timestamps
     pub enable_vad: Option<bool>, // Enable Voice Activity Detection to isolate speech segments
     pub enable_diarize: Option<bool>, // Labels segments with speaker_id
@@ -36,7 +44,8 @@ impl Default for TranscribeOptions {
             offset: Some(0.0),
             model: "base".to_string(), // Default to base model
             lang: Some("auto".to_string()),
-            translate: Some(false),
+            whisper_to_english: Some(false),
+            translate_target: None,
             word_timestamps: Some(true),
             enable_vad: Some(true),
             enable_diarize: None,

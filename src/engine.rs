@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use eyre::eyre;
-use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, ProgressFn, NewSegmentFn};
+use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, NewSegmentFn};
 
 // callback type aliases are defined in crate::types
 
@@ -16,8 +16,8 @@ pub struct EngineConfig {
 }
 
 pub struct Callbacks<'a> {
-    pub download_progress: Option<&'a LabeledProgressFn>,
-    pub transcribe_progress: Option<&'a ProgressFn>,
+    // Unified progress callback: receives percent and a label describing the stage
+    pub progress: Option<&'a LabeledProgressFn>,
     pub new_segment_callback: Option<&'a NewSegmentFn>,
     pub is_cancelled: Option<Box<dyn Fn() -> bool + Send + Sync + 'static>>,
 }
@@ -25,8 +25,7 @@ pub struct Callbacks<'a> {
 impl<'a> Default for Callbacks<'a> {
     fn default() -> Self {
         Self {
-            download_progress: None,
-            transcribe_progress: None,
+            progress: None,
             new_segment_callback: None,
             is_cancelled: None,
         }
@@ -60,7 +59,7 @@ impl Engine {
         // Ensure/download Whisper model
         let _model_path = self
             .models
-            .ensure_whisper_model(&options.model, cb.download_progress, cb.is_cancelled.as_deref())
+            .ensure_whisper_model(&options.model, cb.progress, cb.is_cancelled.as_deref())
             .await?;
 
         let original_samples = crate::audio::read_wav(&audio_path)?;
@@ -77,7 +76,7 @@ impl Engine {
                 (Some(seg), Some(emb)) => (PathBuf::from(seg), PathBuf::from(emb)),
                 _ => self
                     .models
-                    .ensure_diarize_models(seg_url, emb_url, cb.download_progress, cb.is_cancelled.as_deref())
+                    .ensure_diarize_models(seg_url, emb_url, cb.progress, cb.is_cancelled.as_deref())
                     .await?,
             };
 
@@ -109,7 +108,7 @@ impl Engine {
             } else {
                 self
                     .models
-                    .ensure_vad_model(cb.download_progress, cb.is_cancelled.as_deref())
+                    .ensure_vad_model(cb.progress, cb.is_cancelled.as_deref())
                     .await?
             };
 
@@ -140,16 +139,33 @@ impl Engine {
         )
         .map_err(|e| eyre!("Failed to create Whisper context: {}", e))?;
 
-        crate::transcribe::run_transcription_pipeline(
+        // Capture translation options before moving `options` into the pipeline
+        let translate_to = options.translate_target.clone();
+        let from_lang = options.lang.clone().unwrap_or_else(|| "auto".to_string());
+        let whisper_to_en = options.whisper_to_english.unwrap_or(false);
+
+        let mut segments = crate::transcribe::run_transcription_pipeline(
             ctx,
             speech_segments,
             options,
             diarize_options,
-            cb.transcribe_progress,
+            cb.progress,
             cb.new_segment_callback,
             cb.is_cancelled,
         )
-        .await
+        .await?;
+
+        if !whisper_to_en {
+            if let Some(to_lang) = translate_to.as_deref() {
+                if let Some(p) = cb.progress { p(0, &format!("Translating {} segments", segments.len())); }
+                crate::translate::translate_segments(segments.as_mut_slice(), &from_lang, to_lang)
+                    .await
+                    .map_err(|e| eyre!("{}", e))?;
+                if let Some(p) = cb.progress { p(100, "Translating"); }
+            }
+        }
+
+        Ok(segments)
     }
 
     pub async fn delete_whisper_model(&self, model_name: &str) -> eyre::Result<()> {

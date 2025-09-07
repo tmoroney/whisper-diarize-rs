@@ -1,0 +1,2223 @@
+[
+  {
+    "start": 0.28,
+    "end": 1.78,
+    "text": "Have you heard of transhumanism?",
+    "words": [
+      {
+        "word": "Have",
+        "start": 0.28,
+        "end": 0.44,
+        "probability": 0.90504766
+      },
+      {
+        "word": "you",
+        "start": 0.44,
+        "end": 0.6,
+        "probability": 0.9972287
+      },
+      {
+        "word": "heard",
+        "start": 0.6,
+        "end": 0.75,
+        "probability": 0.9987991
+      },
+      {
+        "word": "of",
+        "start": 0.75,
+        "end": 0.91,
+        "probability": 0.98489463
+      },
+      {
+        "word": "transhumanism?",
+        "start": 0.91,
+        "end": 1.78,
+        "probability": 0.85779506
+      }
+    ]
+  },
+  {
+    "start": 2.2800000000000002,
+    "end": 4.28,
+    "text": "If not, we believe that you should have.",
+    "words": [
+      {
+        "word": "If",
+        "start": 2.2800000000000002,
+        "end": 2.5100000000000002,
+        "probability": 0.96441287
+      },
+      {
+        "word": "not,",
+        "start": 2.5100000000000002,
+        "end": 2.99,
+        "probability": 0.9051964
+      },
+      {
+        "word": "we",
+        "start": 2.99,
+        "end": 3.21,
+        "probability": 0.99194354
+      },
+      {
+        "word": "believe",
+        "start": 3.21,
+        "end": 3.43,
+        "probability": 0.9907599
+      },
+      {
+        "word": "that",
+        "start": 3.43,
+        "end": 3.58,
+        "probability": 0.95023096
+      },
+      {
+        "word": "you",
+        "start": 3.58,
+        "end": 3.7300000000000004,
+        "probability": 0.9749978
+      },
+      {
+        "word": "should",
+        "start": 3.7300000000000004,
+        "end": 3.9400000000000004,
+        "probability": 0.93703836
+      },
+      {
+        "word": "have.",
+        "start": 3.9400000000000004,
+        "end": 4.28,
+        "probability": 0.9414692
+      }
+    ]
+  },
+  {
+    "start": 4.92,
+    "end": 12.31,
+    "text": "For us, transhumanism is of the utmost importance to the evolution of humanity, and the continual growth of the human race, due to its present",
+    "words": [
+      {
+        "word": "For",
+        "start": 4.92,
+        "end": 5.09,
+        "probability": 0.9417201
+      },
+      {
+        "word": "us,",
+        "start": 5.09,
+        "end": 5.61,
+        "probability": 0.92886436
+      },
+      {
+        "word": "transhumanism",
+        "start": 5.61,
+        "end": 6.470000000000001,
+        "probability": 0.91358465
+      },
+      {
+        "word": "is",
+        "start": 6.470000000000001,
+        "end": 6.6,
+        "probability": 0.99569106
+      },
+      {
+        "word": "of",
+        "start": 6.6,
+        "end": 6.720000000000001,
+        "probability": 0.99698144
+      },
+      {
+        "word": "the",
+        "start": 6.720000000000001,
+        "end": 6.9,
+        "probability": 0.98650396
+      },
+      {
+        "word": "utmost",
+        "start": 6.9,
+        "end": 7.26,
+        "probability": 0.9978775
+      },
+      {
+        "word": "importance",
+        "start": 7.26,
+        "end": 7.74,
+        "probability": 0.9984296
+      },
+      {
+        "word": "to",
+        "start": 7.74,
+        "end": 8.02,
+        "probability": 0.95261186
+      },
+      {
+        "word": "the",
+        "start": 8.02,
+        "end": 8.21,
+        "probability": 0.9943379
+      },
+      {
+        "word": "evolution",
+        "start": 8.21,
+        "end": 8.530000000000001,
+        "probability": 0.99749595
+      },
+      {
+        "word": "of",
+        "start": 8.530000000000001,
+        "end": 8.92,
+        "probability": 0.99668103
+      },
+      {
+        "word": "humanity,",
+        "start": 8.92,
+        "end": 9.47,
+        "probability": 0.5357904
+      },
+      {
+        "word": "and",
+        "start": 9.47,
+        "end": 9.52,
+        "probability": 0.8832227
+      },
+      {
+        "word": "the",
+        "start": 9.52,
+        "end": 9.75,
+        "probability": 0.82114947
+      },
+      {
+        "word": "continual",
+        "start": 9.75,
+        "end": 10.100000000000001,
+        "probability": 0.91005373
+      },
+      {
+        "word": "growth",
+        "start": 10.100000000000001,
+        "end": 10.370000000000001,
+        "probability": 0.9977918
+      },
+      {
+        "word": "of",
+        "start": 10.370000000000001,
+        "end": 10.530000000000001,
+        "probability": 0.9900779
+      },
+      {
+        "word": "the",
+        "start": 10.530000000000001,
+        "end": 10.690000000000001,
+        "probability": 0.96269083
+      },
+      {
+        "word": "human",
+        "start": 10.690000000000001,
+        "end": 10.92,
+        "probability": 0.9933484
+      },
+      {
+        "word": "race,",
+        "start": 10.92,
+        "end": 11.510000000000002,
+        "probability": 0.585675
+      },
+      {
+        "word": "due",
+        "start": 11.510000000000002,
+        "end": 11.64,
+        "probability": 0.96002746
+      },
+      {
+        "word": "to",
+        "start": 11.64,
+        "end": 11.73,
+        "probability": 0.99810207
+      },
+      {
+        "word": "its",
+        "start": 11.73,
+        "end": 11.920000000000002,
+        "probability": 0.36318702
+      },
+      {
+        "word": "present",
+        "start": 11.920000000000002,
+        "end": 12.31,
+        "probability": 0.78585196
+      }
+    ]
+  },
+  {
+    "start": 12.629999999999999,
+    "end": 15.51,
+    "text": "near future and long-term threats that society is facing.",
+    "words": [
+      {
+        "word": "near",
+        "start": 12.629999999999999,
+        "end": 12.91,
+        "probability": 0.50878745
+      },
+      {
+        "word": "future",
+        "start": 12.91,
+        "end": 13.219999999999999,
+        "probability": 0.96994895
+      },
+      {
+        "word": "and",
+        "start": 13.219999999999999,
+        "end": 13.45,
+        "probability": 0.94882196
+      },
+      {
+        "word": "long-term",
+        "start": 13.45,
+        "end": 13.92,
+        "probability": 0.8968198
+      },
+      {
+        "word": "threats",
+        "start": 13.92,
+        "end": 14.18,
+        "probability": 0.98934174
+      },
+      {
+        "word": "that",
+        "start": 14.18,
+        "end": 14.52,
+        "probability": 0.6640872
+      },
+      {
+        "word": "society",
+        "start": 14.52,
+        "end": 14.84,
+        "probability": 0.9704634
+      },
+      {
+        "word": "is",
+        "start": 14.84,
+        "end": 15.07,
+        "probability": 0.9933314
+      },
+      {
+        "word": "facing.",
+        "start": 15.07,
+        "end": 15.51,
+        "probability": 0.9909352
+      }
+    ]
+  },
+  {
+    "start": 16.349999999999998,
+    "end": 20.5,
+    "text": "Transhumanism will be the key to our survival, and we all need to get on board before it's too late.",
+    "words": [
+      {
+        "word": "Transhumanism",
+        "start": 16.349999999999998,
+        "end": 17.08,
+        "probability": 0.87160546
+      },
+      {
+        "word": "will",
+        "start": 17.08,
+        "end": 17.24,
+        "probability": 0.88711935
+      },
+      {
+        "word": "be",
+        "start": 17.24,
+        "end": 17.36,
+        "probability": 0.9967533
+      },
+      {
+        "word": "the",
+        "start": 17.36,
+        "end": 17.5,
+        "probability": 0.9722624
+      },
+      {
+        "word": "key",
+        "start": 17.5,
+        "end": 17.7,
+        "probability": 0.9980545
+      },
+      {
+        "word": "to",
+        "start": 17.7,
+        "end": 17.86,
+        "probability": 0.944611
+      },
+      {
+        "word": "our",
+        "start": 17.86,
+        "end": 18.06,
+        "probability": 0.9727595
+      },
+      {
+        "word": "survival,",
+        "start": 18.06,
+        "end": 18.55,
+        "probability": 0.69497705
+      },
+      {
+        "word": "and",
+        "start": 18.55,
+        "end": 18.619999999999997,
+        "probability": 0.884062
+      },
+      {
+        "word": "we",
+        "start": 18.619999999999997,
+        "end": 18.74,
+        "probability": 0.994945
+      },
+      {
+        "word": "all",
+        "start": 18.74,
+        "end": 18.89,
+        "probability": 0.9938601
+      },
+      {
+        "word": "need",
+        "start": 18.89,
+        "end": 19.02,
+        "probability": 0.99606144
+      },
+      {
+        "word": "to",
+        "start": 19.02,
+        "end": 19.13,
+        "probability": 0.9974265
+      },
+      {
+        "word": "get",
+        "start": 19.13,
+        "end": 19.24,
+        "probability": 0.98883045
+      },
+      {
+        "word": "on",
+        "start": 19.24,
+        "end": 19.39,
+        "probability": 0.922189
+      },
+      {
+        "word": "board",
+        "start": 19.39,
+        "end": 19.65,
+        "probability": 0.9619456
+      },
+      {
+        "word": "before",
+        "start": 19.65,
+        "end": 19.88,
+        "probability": 0.936547
+      },
+      {
+        "word": "it's",
+        "start": 19.88,
+        "end": 20.06,
+        "probability": 0.9044663
+      },
+      {
+        "word": "too",
+        "start": 20.06,
+        "end": 20.2,
+        "probability": 0.9832026
+      },
+      {
+        "word": "late.",
+        "start": 20.2,
+        "end": 20.5,
+        "probability": 0.984028
+      }
+    ]
+  },
+  {
+    "start": 20.990000000000002,
+    "end": 24.37,
+    "text": "We're going to convince you today of why transhumanism is our last hope.",
+    "words": [
+      {
+        "word": "We're",
+        "start": 20.990000000000002,
+        "end": 21.07,
+        "probability": 0.9432776
+      },
+      {
+        "word": "going",
+        "start": 21.07,
+        "end": 21.14,
+        "probability": 0.7251223
+      },
+      {
+        "word": "to",
+        "start": 21.14,
+        "end": 21.3,
+        "probability": 0.9952809
+      },
+      {
+        "word": "convince",
+        "start": 21.3,
+        "end": 21.5,
+        "probability": 0.9998703
+      },
+      {
+        "word": "you",
+        "start": 21.5,
+        "end": 21.71,
+        "probability": 0.99890006
+      },
+      {
+        "word": "today",
+        "start": 21.71,
+        "end": 21.93,
+        "probability": 0.98761284
+      },
+      {
+        "word": "of",
+        "start": 21.93,
+        "end": 22.150000000000002,
+        "probability": 0.27251017
+      },
+      {
+        "word": "why",
+        "start": 22.150000000000002,
+        "end": 22.42,
+        "probability": 0.9282809
+      },
+      {
+        "word": "transhumanism",
+        "start": 22.42,
+        "end": 23.22,
+        "probability": 0.788474
+      },
+      {
+        "word": "is",
+        "start": 23.22,
+        "end": 23.55,
+        "probability": 0.9931362
+      },
+      {
+        "word": "our",
+        "start": 23.55,
+        "end": 23.86,
+        "probability": 0.99165225
+      },
+      {
+        "word": "last",
+        "start": 23.86,
+        "end": 24.12,
+        "probability": 0.99411607
+      },
+      {
+        "word": "hope.",
+        "start": 24.12,
+        "end": 24.37,
+        "probability": 0.9876738
+      }
+    ]
+  },
+  {
+    "start": 32.75,
+    "end": 34.870000000000005,
+    "text": "Transhumanism has infinite possibilities.",
+    "words": [
+      {
+        "word": "Transhumanism",
+        "start": 32.75,
+        "end": 33.51,
+        "probability": 0.7310762
+      },
+      {
+        "word": "has",
+        "start": 33.51,
+        "end": 33.74,
+        "probability": 0.99483305
+      },
+      {
+        "word": "infinite",
+        "start": 33.74,
+        "end": 34.1,
+        "probability": 0.9654923
+      },
+      {
+        "word": "possibilities.",
+        "start": 34.1,
+        "end": 34.870000000000005,
+        "probability": 0.97244227
+      }
+    ]
+  },
+  {
+    "start": 35.12,
+    "end": 41.62,
+    "text": "Scientists have been creating bionic arms genetically improved animals, and have even suggested the idea of digital immortality.",
+    "words": [
+      {
+        "word": "Scientists",
+        "start": 35.12,
+        "end": 35.47,
+        "probability": 0.67631644
+      },
+      {
+        "word": "have",
+        "start": 35.47,
+        "end": 35.6,
+        "probability": 0.99737704
+      },
+      {
+        "word": "been",
+        "start": 35.6,
+        "end": 35.78,
+        "probability": 0.9984486
+      },
+      {
+        "word": "creating",
+        "start": 35.78,
+        "end": 36.07,
+        "probability": 0.86317104
+      },
+      {
+        "word": "bionic",
+        "start": 36.07,
+        "end": 36.61,
+        "probability": 0.943429
+      },
+      {
+        "word": "arms",
+        "start": 36.61,
+        "end": 37.03,
+        "probability": 0.9854386
+      },
+      {
+        "word": "genetically",
+        "start": 37.03,
+        "end": 37.52,
+        "probability": 0.7213935
+      },
+      {
+        "word": "improved",
+        "start": 37.52,
+        "end": 37.9,
+        "probability": 0.3834878
+      },
+      {
+        "word": "animals,",
+        "start": 37.9,
+        "end": 38.81,
+        "probability": 0.69499844
+      },
+      {
+        "word": "and",
+        "start": 38.81,
+        "end": 38.92,
+        "probability": 0.88624835
+      },
+      {
+        "word": "have",
+        "start": 38.92,
+        "end": 39.04,
+        "probability": 0.7778032
+      },
+      {
+        "word": "even",
+        "start": 39.04,
+        "end": 39.3,
+        "probability": 0.9893738
+      },
+      {
+        "word": "suggested",
+        "start": 39.3,
+        "end": 39.68,
+        "probability": 0.945699
+      },
+      {
+        "word": "the",
+        "start": 39.68,
+        "end": 40.04,
+        "probability": 0.62411165
+      },
+      {
+        "word": "idea",
+        "start": 40.04,
+        "end": 40.34,
+        "probability": 0.96297914
+      },
+      {
+        "word": "of",
+        "start": 40.34,
+        "end": 40.61,
+        "probability": 0.96679056
+      },
+      {
+        "word": "digital",
+        "start": 40.61,
+        "end": 40.95,
+        "probability": 0.9198289
+      },
+      {
+        "word": "immortality.",
+        "start": 40.95,
+        "end": 41.62,
+        "probability": 0.7180367
+      }
+    ]
+  },
+  {
+    "start": 42.64,
+    "end": 44.370000000000005,
+    "text": "What is digital immortality?",
+    "words": [
+      {
+        "word": "What",
+        "start": 42.64,
+        "end": 42.86,
+        "probability": 0.8796715
+      },
+      {
+        "word": "is",
+        "start": 42.86,
+        "end": 43.2,
+        "probability": 0.97641593
+      },
+      {
+        "word": "digital",
+        "start": 43.2,
+        "end": 43.56,
+        "probability": 0.97674745
+      },
+      {
+        "word": "immortality?",
+        "start": 43.56,
+        "end": 44.370000000000005,
+        "probability": 0.9894161
+      }
+    ]
+  },
+  {
+    "start": 45.15,
+    "end": 49.2,
+    "text": "Digital immortality is the reconstruction of a personality in digital form.",
+    "words": [
+      {
+        "word": "Digital",
+        "start": 45.15,
+        "end": 45.54,
+        "probability": 0.93588626
+      },
+      {
+        "word": "immortality",
+        "start": 45.54,
+        "end": 46.09,
+        "probability": 0.9952392
+      },
+      {
+        "word": "is",
+        "start": 46.09,
+        "end": 46.52,
+        "probability": 0.9961926
+      },
+      {
+        "word": "the",
+        "start": 46.52,
+        "end": 46.74,
+        "probability": 0.99005336
+      },
+      {
+        "word": "reconstruction",
+        "start": 46.74,
+        "end": 47.190000000000005,
+        "probability": 0.98795855
+      },
+      {
+        "word": "of",
+        "start": 47.190000000000005,
+        "end": 47.52,
+        "probability": 0.99476093
+      },
+      {
+        "word": "a",
+        "start": 47.52,
+        "end": 47.870000000000005,
+        "probability": 0.9091637
+      },
+      {
+        "word": "personality",
+        "start": 47.870000000000005,
+        "end": 48.31,
+        "probability": 0.9980821
+      },
+      {
+        "word": "in",
+        "start": 48.31,
+        "end": 48.57,
+        "probability": 0.7758822
+      },
+      {
+        "word": "digital",
+        "start": 48.57,
+        "end": 48.86,
+        "probability": 0.8366412
+      },
+      {
+        "word": "form.",
+        "start": 48.86,
+        "end": 49.2,
+        "probability": 0.94640857
+      }
+    ]
+  },
+  {
+    "start": 49.73,
+    "end": 54.449999999999996,
+    "text": "It is evident that people want to live ever, although it has never been considered a realistic option.",
+    "words": [
+      {
+        "word": "It",
+        "start": 49.73,
+        "end": 50.199999999999996,
+        "probability": 0.9399337
+      },
+      {
+        "word": "is",
+        "start": 50.199999999999996,
+        "end": 50.36,
+        "probability": 0.939741
+      },
+      {
+        "word": "evident",
+        "start": 50.36,
+        "end": 50.599999999999994,
+        "probability": 0.87110656
+      },
+      {
+        "word": "that",
+        "start": 50.599999999999994,
+        "end": 50.83,
+        "probability": 0.96243745
+      },
+      {
+        "word": "people",
+        "start": 50.83,
+        "end": 51.04,
+        "probability": 0.98105484
+      },
+      {
+        "word": "want",
+        "start": 51.04,
+        "end": 51.22,
+        "probability": 0.94537526
+      },
+      {
+        "word": "to",
+        "start": 51.22,
+        "end": 51.36,
+        "probability": 0.99232394
+      },
+      {
+        "word": "live",
+        "start": 51.36,
+        "end": 51.64,
+        "probability": 0.9938146
+      },
+      {
+        "word": "ever,",
+        "start": 51.64,
+        "end": 52.16,
+        "probability": 0.68999994
+      },
+      {
+        "word": "although",
+        "start": 52.16,
+        "end": 52.349999999999994,
+        "probability": 0.97648853
+      },
+      {
+        "word": "it",
+        "start": 52.349999999999994,
+        "end": 52.48,
+        "probability": 0.9835711
+      },
+      {
+        "word": "has",
+        "start": 52.48,
+        "end": 52.65,
+        "probability": 0.8864191
+      },
+      {
+        "word": "never",
+        "start": 52.65,
+        "end": 52.839999999999996,
+        "probability": 0.9956512
+      },
+      {
+        "word": "been",
+        "start": 52.839999999999996,
+        "end": 53.06999999999999,
+        "probability": 0.97319746
+      },
+      {
+        "word": "considered",
+        "start": 53.06999999999999,
+        "end": 53.36,
+        "probability": 0.99437016
+      },
+      {
+        "word": "a",
+        "start": 53.36,
+        "end": 53.65,
+        "probability": 0.9871684
+      },
+      {
+        "word": "realistic",
+        "start": 53.65,
+        "end": 54.04,
+        "probability": 0.9914659
+      },
+      {
+        "word": "option.",
+        "start": 54.04,
+        "end": 54.449999999999996,
+        "probability": 0.969731
+      }
+    ]
+  },
+  {
+    "start": 55.01,
+    "end": 56.98,
+    "text": "It has always made this subject a fiction.",
+    "words": [
+      {
+        "word": "It",
+        "start": 55.01,
+        "end": 55.14,
+        "probability": 0.98263544
+      },
+      {
+        "word": "has",
+        "start": 55.14,
+        "end": 55.32,
+        "probability": 0.92917365
+      },
+      {
+        "word": "always",
+        "start": 55.32,
+        "end": 55.54,
+        "probability": 0.9984105
+      },
+      {
+        "word": "made",
+        "start": 55.54,
+        "end": 55.76,
+        "probability": 0.54090816
+      },
+      {
+        "word": "this",
+        "start": 55.76,
+        "end": 55.98,
+        "probability": 0.6062681
+      },
+      {
+        "word": "subject",
+        "start": 55.98,
+        "end": 56.26,
+        "probability": 0.96827334
+      },
+      {
+        "word": "a",
+        "start": 56.26,
+        "end": 56.57,
+        "probability": 0.71102124
+      },
+      {
+        "word": "fiction.",
+        "start": 56.57,
+        "end": 56.98,
+        "probability": 0.97114646
+      }
+    ]
+  },
+  {
+    "start": 57.78,
+    "end": 60.37,
+    "text": "With improve technology, it has become a more probable.",
+    "words": [
+      {
+        "word": "With",
+        "start": 57.78,
+        "end": 57.919999999999995,
+        "probability": 0.62314934
+      },
+      {
+        "word": "improve",
+        "start": 57.919999999999995,
+        "end": 58.269999999999996,
+        "probability": 0.28766784
+      },
+      {
+        "word": "technology,",
+        "start": 58.269999999999996,
+        "end": 58.8,
+        "probability": 0.77548313
+      },
+      {
+        "word": "it",
+        "start": 58.8,
+        "end": 59.059999999999995,
+        "probability": 0.9764438
+      },
+      {
+        "word": "has",
+        "start": 59.059999999999995,
+        "end": 59.239999999999995,
+        "probability": 0.7350355
+      },
+      {
+        "word": "become",
+        "start": 59.239999999999995,
+        "end": 59.43,
+        "probability": 0.9164622
+      },
+      {
+        "word": "a",
+        "start": 59.43,
+        "end": 59.599999999999994,
+        "probability": 0.8577993
+      },
+      {
+        "word": "more",
+        "start": 59.599999999999994,
+        "end": 59.879999999999995,
+        "probability": 0.8408213
+      },
+      {
+        "word": "probable.",
+        "start": 59.879999999999995,
+        "end": 60.37,
+        "probability": 0.91554
+      }
+    ]
+  },
+  {
+    "start": 61.18,
+    "end": 67.06,
+    "text": "The Allen Institute in Seattle finished the recreation of a mice brain on a computer in May 2020.",
+    "words": [
+      {
+        "word": "The",
+        "start": 61.18,
+        "end": 61.37,
+        "probability": 0.9701173
+      },
+      {
+        "word": "Allen",
+        "start": 61.37,
+        "end": 61.66,
+        "probability": 0.8883071
+      },
+      {
+        "word": "Institute",
+        "start": 61.66,
+        "end": 62.019999999999996,
+        "probability": 0.9933351
+      },
+      {
+        "word": "in",
+        "start": 62.019999999999996,
+        "end": 62.309999999999995,
+        "probability": 0.9293456
+      },
+      {
+        "word": "Seattle",
+        "start": 62.309999999999995,
+        "end": 62.9,
+        "probability": 0.9962401
+      },
+      {
+        "word": "finished",
+        "start": 62.9,
+        "end": 63.47,
+        "probability": 0.92369056
+      },
+      {
+        "word": "the",
+        "start": 63.47,
+        "end": 63.769999999999996,
+        "probability": 0.95478016
+      },
+      {
+        "word": "recreation",
+        "start": 63.769999999999996,
+        "end": 64.2,
+        "probability": 0.97140694
+      },
+      {
+        "word": "of",
+        "start": 64.2,
+        "end": 64.48,
+        "probability": 0.9668403
+      },
+      {
+        "word": "a",
+        "start": 64.48,
+        "end": 64.61,
+        "probability": 0.95637584
+      },
+      {
+        "word": "mice",
+        "start": 64.61,
+        "end": 64.82,
+        "probability": 0.1446862
+      },
+      {
+        "word": "brain",
+        "start": 64.82,
+        "end": 65.09,
+        "probability": 0.69861704
+      },
+      {
+        "word": "on",
+        "start": 65.09,
+        "end": 65.28,
+        "probability": 0.9822157
+      },
+      {
+        "word": "a",
+        "start": 65.28,
+        "end": 65.45,
+        "probability": 0.984688
+      },
+      {
+        "word": "computer",
+        "start": 65.45,
+        "end": 65.77,
+        "probability": 0.9967989
+      },
+      {
+        "word": "in",
+        "start": 65.77,
+        "end": 66.03999999999999,
+        "probability": 0.9799272
+      },
+      {
+        "word": "May",
+        "start": 66.03999999999999,
+        "end": 66.39999999999999,
+        "probability": 0.91099066
+      },
+      {
+        "word": "2020.",
+        "start": 66.39999999999999,
+        "end": 67.06,
+        "probability": 0.93274
+      }
+    ]
+  },
+  {
+    "start": 67.64,
+    "end": 73.52,
+    "text": "This brain computer can react to images, and is the largest brain recreation on a computer to date.",
+    "words": [
+      {
+        "word": "This",
+        "start": 67.64,
+        "end": 68.11,
+        "probability": 0.98072374
+      },
+      {
+        "word": "brain",
+        "start": 68.11,
+        "end": 68.44,
+        "probability": 0.97359663
+      },
+      {
+        "word": "computer",
+        "start": 68.44,
+        "end": 68.83,
+        "probability": 0.9862556
+      },
+      {
+        "word": "can",
+        "start": 68.83,
+        "end": 69.14,
+        "probability": 0.99730664
+      },
+      {
+        "word": "react",
+        "start": 69.14,
+        "end": 69.41,
+        "probability": 0.9927537
+      },
+      {
+        "word": "to",
+        "start": 69.41,
+        "end": 69.78,
+        "probability": 0.89714336
+      },
+      {
+        "word": "images,",
+        "start": 69.78,
+        "end": 70.24,
+        "probability": 0.58611107
+      },
+      {
+        "word": "and",
+        "start": 70.24,
+        "end": 70.35,
+        "probability": 0.9202562
+      },
+      {
+        "word": "is",
+        "start": 70.35,
+        "end": 70.50999999999999,
+        "probability": 0.8946742
+      },
+      {
+        "word": "the",
+        "start": 70.50999999999999,
+        "end": 70.75,
+        "probability": 0.992926
+      },
+      {
+        "word": "largest",
+        "start": 70.75,
+        "end": 71.14999999999999,
+        "probability": 0.9966202
+      },
+      {
+        "word": "brain",
+        "start": 71.14999999999999,
+        "end": 71.61,
+        "probability": 0.99269116
+      },
+      {
+        "word": "recreation",
+        "start": 71.61,
+        "end": 72.08,
+        "probability": 0.8259632
+      },
+      {
+        "word": "on",
+        "start": 72.08,
+        "end": 72.36,
+        "probability": 0.9928446
+      },
+      {
+        "word": "a",
+        "start": 72.36,
+        "end": 72.53,
+        "probability": 0.8241621
+      },
+      {
+        "word": "computer",
+        "start": 72.53,
+        "end": 72.83,
+        "probability": 0.9988429
+      },
+      {
+        "word": "to",
+        "start": 72.83,
+        "end": 73.09,
+        "probability": 0.9569698
+      },
+      {
+        "word": "date.",
+        "start": 73.09,
+        "end": 73.52,
+        "probability": 0.9872172
+      }
+    ]
+  },
+  {
+    "start": 74.39,
+    "end": 83.89,
+    "text": "LifeNot, another organization working on digital immortality, is offering a service where you fill out a mind flow online and upload facts and images about yourself.",
+    "words": [
+      {
+        "word": "LifeNot,",
+        "start": 74.39,
+        "end": 75.15,
+        "probability": 0.67106485
+      },
+      {
+        "word": "another",
+        "start": 75.15,
+        "end": 75.51,
+        "probability": 0.97163945
+      },
+      {
+        "word": "organization",
+        "start": 75.51,
+        "end": 76.14,
+        "probability": 0.7160643
+      },
+      {
+        "word": "working",
+        "start": 76.14,
+        "end": 76.67,
+        "probability": 0.962981
+      },
+      {
+        "word": "on",
+        "start": 76.67,
+        "end": 76.93,
+        "probability": 0.9961926
+      },
+      {
+        "word": "digital",
+        "start": 76.93,
+        "end": 77.2,
+        "probability": 0.9764569
+      },
+      {
+        "word": "immortality,",
+        "start": 77.2,
+        "end": 78.31,
+        "probability": 0.9052187
+      },
+      {
+        "word": "is",
+        "start": 78.31,
+        "end": 78.52,
+        "probability": 0.93630767
+      },
+      {
+        "word": "offering",
+        "start": 78.52,
+        "end": 78.76,
+        "probability": 0.95045215
+      },
+      {
+        "word": "a",
+        "start": 78.76,
+        "end": 79.02,
+        "probability": 0.9888399
+      },
+      {
+        "word": "service",
+        "start": 79.02,
+        "end": 79.31,
+        "probability": 0.9869189
+      },
+      {
+        "word": "where",
+        "start": 79.31,
+        "end": 79.5,
+        "probability": 0.8255876
+      },
+      {
+        "word": "you",
+        "start": 79.5,
+        "end": 79.63,
+        "probability": 0.7925603
+      },
+      {
+        "word": "fill",
+        "start": 79.63,
+        "end": 79.8,
+        "probability": 0.756112
+      },
+      {
+        "word": "out",
+        "start": 79.8,
+        "end": 79.97,
+        "probability": 0.7673535
+      },
+      {
+        "word": "a",
+        "start": 79.97,
+        "end": 80.14,
+        "probability": 0.7341983
+      },
+      {
+        "word": "mind",
+        "start": 80.14,
+        "end": 80.38,
+        "probability": 0.29208875
+      },
+      {
+        "word": "flow",
+        "start": 80.38,
+        "end": 80.73,
+        "probability": 0.30214712
+      },
+      {
+        "word": "online",
+        "start": 80.73,
+        "end": 81.31,
+        "probability": 0.72438276
+      },
+      {
+        "word": "and",
+        "start": 81.31,
+        "end": 81.82,
+        "probability": 0.68323225
+      },
+      {
+        "word": "upload",
+        "start": 81.82,
+        "end": 82.2,
+        "probability": 0.9952174
+      },
+      {
+        "word": "facts",
+        "start": 82.2,
+        "end": 82.62,
+        "probability": 0.99371606
+      },
+      {
+        "word": "and",
+        "start": 82.62,
+        "end": 82.93,
+        "probability": 0.9857046
+      },
+      {
+        "word": "images",
+        "start": 82.93,
+        "end": 83.23,
+        "probability": 0.9970784
+      },
+      {
+        "word": "about",
+        "start": 83.23,
+        "end": 83.59,
+        "probability": 0.943734
+      },
+      {
+        "word": "yourself.",
+        "start": 83.59,
+        "end": 83.89,
+        "probability": 0.9775146
+      }
+    ]
+  },
+  {
+    "start": 84.79,
+    "end": 87.29,
+    "text": "It collects all your data and stores it.",
+    "words": [
+      {
+        "word": "It",
+        "start": 84.79,
+        "end": 84.94,
+        "probability": 0.89887846
+      },
+      {
+        "word": "collects",
+        "start": 84.94,
+        "end": 85.18,
+        "probability": 0.80788773
+      },
+      {
+        "word": "all",
+        "start": 85.18,
+        "end": 85.42,
+        "probability": 0.74899966
+      },
+      {
+        "word": "your",
+        "start": 85.42,
+        "end": 85.60000000000001,
+        "probability": 0.9810193
+      },
+      {
+        "word": "data",
+        "start": 85.60000000000001,
+        "end": 85.87,
+        "probability": 0.99892294
+      },
+      {
+        "word": "and",
+        "start": 85.87,
+        "end": 86.16,
+        "probability": 0.9882497
+      },
+      {
+        "word": "stores",
+        "start": 86.16,
+        "end": 86.41,
+        "probability": 0.6150067
+      },
+      {
+        "word": "it.<|endoftext|>",
+        "start": 86.41,
+        "end": 87.29,
+        "probability": 0.98327285
+      }
+    ]
+  },
+  {
+    "start": 87.29,
+    "end": 93.01,
+    "text": "So when the technology is created they will be able to download this data into a computer, robot or new human form.",
+    "words": [
+      {
+        "word": "So",
+        "start": 87.29,
+        "end": 87.37,
+        "probability": 0.82454264
+      },
+      {
+        "word": "when",
+        "start": 87.37,
+        "end": 87.47,
+        "probability": 0.8803567
+      },
+      {
+        "word": "the",
+        "start": 87.47,
+        "end": 87.7,
+        "probability": 0.9667039
+      },
+      {
+        "word": "technology",
+        "start": 87.7,
+        "end": 88.03,
+        "probability": 0.97626877
+      },
+      {
+        "word": "is",
+        "start": 88.03,
+        "end": 88.35000000000001,
+        "probability": 0.9258107
+      },
+      {
+        "word": "created",
+        "start": 88.35000000000001,
+        "end": 88.64,
+        "probability": 0.992676
+      },
+      {
+        "word": "they",
+        "start": 88.64,
+        "end": 88.82000000000001,
+        "probability": 0.4226093
+      },
+      {
+        "word": "will",
+        "start": 88.82000000000001,
+        "end": 88.93,
+        "probability": 0.9495371
+      },
+      {
+        "word": "be",
+        "start": 88.93,
+        "end": 89.07000000000001,
+        "probability": 0.9935379
+      },
+      {
+        "word": "able",
+        "start": 89.07000000000001,
+        "end": 89.24000000000001,
+        "probability": 0.9987267
+      },
+      {
+        "word": "to",
+        "start": 89.24000000000001,
+        "end": 89.47,
+        "probability": 0.99069566
+      },
+      {
+        "word": "download",
+        "start": 89.47,
+        "end": 89.8,
+        "probability": 0.97968143
+      },
+      {
+        "word": "this",
+        "start": 89.8,
+        "end": 90.09,
+        "probability": 0.97704095
+      },
+      {
+        "word": "data",
+        "start": 90.09,
+        "end": 90.46000000000001,
+        "probability": 0.9764448
+      },
+      {
+        "word": "into",
+        "start": 90.46000000000001,
+        "end": 90.76,
+        "probability": 0.96350825
+      },
+      {
+        "word": "a",
+        "start": 90.76,
+        "end": 91.02000000000001,
+        "probability": 0.9613614
+      },
+      {
+        "word": "computer,",
+        "start": 91.02000000000001,
+        "end": 91.58,
+        "probability": 0.96632034
+      },
+      {
+        "word": "robot",
+        "start": 91.58,
+        "end": 91.91,
+        "probability": 0.78388715
+      },
+      {
+        "word": "or",
+        "start": 91.91,
+        "end": 92.19,
+        "probability": 0.71148926
+      },
+      {
+        "word": "new",
+        "start": 92.19,
+        "end": 92.39,
+        "probability": 0.9495316
+      },
+      {
+        "word": "human",
+        "start": 92.39,
+        "end": 92.65,
+        "probability": 0.9801281
+      },
+      {
+        "word": "form.",
+        "start": 92.65,
+        "end": 93.01,
+        "probability": 0.98712075
+      }
+    ]
+  },
+  {
+    "start": 93.72,
+    "end": 95.09,
+    "text": "We ask \"Will this ever happen?\"",
+    "words": [
+      {
+        "word": "We",
+        "start": 93.72,
+        "end": 93.84,
+        "probability": 0.9303689
+      },
+      {
+        "word": "ask",
+        "start": 93.84,
+        "end": 94.01,
+        "probability": 0.98314536
+      },
+      {
+        "word": "\"Will",
+        "start": 94.01,
+        "end": 94.24000000000001,
+        "probability": 0.43248892
+      },
+      {
+        "word": "this",
+        "start": 94.24000000000001,
+        "end": 94.43,
+        "probability": 0.95931995
+      },
+      {
+        "word": "ever",
+        "start": 94.43,
+        "end": 94.77,
+        "probability": 0.99755204
+      },
+      {
+        "word": "happen?\"",
+        "start": 94.77,
+        "end": 95.09,
+        "probability": 0.9322529
+      }
+    ]
+  },
+  {
+    "start": 95.69000000000001,
+    "end": 102.93,
+    "text": "Although there hasn't been much progress to date in our aspect of digital immortality, history has taught us that technology always improves.",
+    "words": [
+      {
+        "word": "Although",
+        "start": 95.69000000000001,
+        "end": 95.91000000000001,
+        "probability": 0.9350254
+      },
+      {
+        "word": "there",
+        "start": 95.91000000000001,
+        "end": 96.07000000000001,
+        "probability": 0.94395906
+      },
+      {
+        "word": "hasn't",
+        "start": 96.07000000000001,
+        "end": 96.36000000000001,
+        "probability": 0.9642294
+      },
+      {
+        "word": "been",
+        "start": 96.36000000000001,
+        "end": 96.51,
+        "probability": 0.9378555
+      },
+      {
+        "word": "much",
+        "start": 96.51,
+        "end": 96.72000000000001,
+        "probability": 0.99396056
+      },
+      {
+        "word": "progress",
+        "start": 96.72000000000001,
+        "end": 96.98,
+        "probability": 0.999285
+      },
+      {
+        "word": "to",
+        "start": 96.98,
+        "end": 97.22000000000001,
+        "probability": 0.7478998
+      },
+      {
+        "word": "date",
+        "start": 97.22000000000001,
+        "end": 97.5,
+        "probability": 0.14636534
+      },
+      {
+        "word": "in",
+        "start": 97.5,
+        "end": 97.75,
+        "probability": 0.45179573
+      },
+      {
+        "word": "our",
+        "start": 97.75,
+        "end": 98.05000000000001,
+        "probability": 0.10058483
+      },
+      {
+        "word": "aspect",
+        "start": 98.05000000000001,
+        "end": 98.39,
+        "probability": 0.827863
+      },
+      {
+        "word": "of",
+        "start": 98.39,
+        "end": 98.64,
+        "probability": 0.9856914
+      },
+      {
+        "word": "digital",
+        "start": 98.64,
+        "end": 98.92,
+        "probability": 0.98454434
+      },
+      {
+        "word": "immortality,",
+        "start": 98.92,
+        "end": 100.12,
+        "probability": 0.83215165
+      },
+      {
+        "word": "history",
+        "start": 100.12,
+        "end": 100.44000000000001,
+        "probability": 0.78564817
+      },
+      {
+        "word": "has",
+        "start": 100.44000000000001,
+        "end": 100.66000000000001,
+        "probability": 0.6792614
+      },
+      {
+        "word": "taught",
+        "start": 100.66000000000001,
+        "end": 100.89000000000001,
+        "probability": 0.6451955
+      },
+      {
+        "word": "us",
+        "start": 100.89000000000001,
+        "end": 101.11000000000001,
+        "probability": 0.98380566
+      },
+      {
+        "word": "that",
+        "start": 101.11000000000001,
+        "end": 101.34,
+        "probability": 0.8897866
+      },
+      {
+        "word": "technology",
+        "start": 101.34,
+        "end": 101.81,
+        "probability": 0.9868004
+      },
+      {
+        "word": "always",
+        "start": 101.81,
+        "end": 102.30000000000001,
+        "probability": 0.991448
+      },
+      {
+        "word": "improves.",
+        "start": 102.30000000000001,
+        "end": 102.93,
+        "probability": 0.9868555
+      }
+    ]
+  },
+  {
+    "start": 103.47,
+    "end": 109.11,
+    "text": "Stephen will talk about limous placements. The use of limous placements have been around since 1,000 BC.",
+    "words": [
+      {
+        "word": "Stephen",
+        "start": 103.47,
+        "end": 103.87,
+        "probability": 0.710851
+      },
+      {
+        "word": "will",
+        "start": 103.87,
+        "end": 104.04,
+        "probability": 0.99467933
+      },
+      {
+        "word": "talk",
+        "start": 104.04,
+        "end": 104.29,
+        "probability": 0.9966278
+      },
+      {
+        "word": "about",
+        "start": 104.29,
+        "end": 104.55,
+        "probability": 0.99701184
+      },
+      {
+        "word": "limous",
+        "start": 104.55,
+        "end": 104.91,
+        "probability": 0.12989356
+      },
+      {
+        "word": "placements.",
+        "start": 104.91,
+        "end": 105.59,
+        "probability": 0.8499113
+      },
+      {
+        "word": "The",
+        "start": 105.59,
+        "end": 105.72,
+        "probability": 0.46630844
+      },
+      {
+        "word": "use",
+        "start": 105.72,
+        "end": 105.86,
+        "probability": 0.98622364
+      },
+      {
+        "word": "of",
+        "start": 105.86,
+        "end": 105.99,
+        "probability": 0.9986524
+      },
+      {
+        "word": "limous",
+        "start": 105.99,
+        "end": 106.28,
+        "probability": 0.9581901
+      },
+      {
+        "word": "placements",
+        "start": 106.28,
+        "end": 106.72,
+        "probability": 0.9924132
+      },
+      {
+        "word": "have",
+        "start": 106.72,
+        "end": 106.9,
+        "probability": 0.6160457
+      },
+      {
+        "word": "been",
+        "start": 106.9,
+        "end": 107.1,
+        "probability": 0.9896796
+      },
+      {
+        "word": "around",
+        "start": 107.1,
+        "end": 107.56,
+        "probability": 0.96063095
+      },
+      {
+        "word": "since",
+        "start": 107.56,
+        "end": 108.01,
+        "probability": 0.98191977
+      },
+      {
+        "word": "1,000",
+        "start": 108.01,
+        "end": 108.59,
+        "probability": 0.4577419
+      },
+      {
+        "word": "BC.",
+        "start": 108.59,
+        "end": 109.11,
+        "probability": 0.8846492
+      }
+    ]
+  },
+  {
+    "start": 109.79,
+    "end": 113.91000000000001,
+    "text": "We know this as a word another term was found from ancient Egypt.",
+    "words": [
+      {
+        "word": "We",
+        "start": 109.79,
+        "end": 109.96000000000001,
+        "probability": 0.98661685
+      },
+      {
+        "word": "know",
+        "start": 109.96000000000001,
+        "end": 110.23,
+        "probability": 0.99098855
+      },
+      {
+        "word": "this",
+        "start": 110.23,
+        "end": 110.59,
+        "probability": 0.98443633
+      },
+      {
+        "word": "as",
+        "start": 110.59,
+        "end": 110.91000000000001,
+        "probability": 0.96815604
+      },
+      {
+        "word": "a",
+        "start": 110.91000000000001,
+        "end": 111.16000000000001,
+        "probability": 0.90920705
+      },
+      {
+        "word": "word",
+        "start": 111.16000000000001,
+        "end": 111.46000000000001,
+        "probability": 0.9774286
+      },
+      {
+        "word": "another",
+        "start": 111.46000000000001,
+        "end": 111.81,
+        "probability": 0.88617736
+      },
+      {
+        "word": "term",
+        "start": 111.81,
+        "end": 112.15,
+        "probability": 0.2460354
+      },
+      {
+        "word": "was",
+        "start": 112.15,
+        "end": 112.43,
+        "probability": 0.9948236
+      },
+      {
+        "word": "found",
+        "start": 112.43,
+        "end": 112.71000000000001,
+        "probability": 0.96045965
+      },
+      {
+        "word": "from",
+        "start": 112.71000000000001,
+        "end": 113.0,
+        "probability": 0.98504865
+      },
+      {
+        "word": "ancient",
+        "start": 113.0,
+        "end": 113.36,
+        "probability": 0.8466244
+      },
+      {
+        "word": "Egypt.",
+        "start": 113.36,
+        "end": 113.91000000000001,
+        "probability": 0.9917923
+      }
+    ]
+  },
+  {
+    "start": 114.91,
+    "end": 122.11,
+    "text": "This gives us hope that in the future the technology will improve and we will be able to create digital immortality.",
+    "words": [
+      {
+        "word": "This",
+        "start": 114.91,
+        "end": 115.11,
+        "probability": 0.98583806
+      },
+      {
+        "word": "gives",
+        "start": 115.11,
+        "end": 115.27,
+        "probability": 0.9872531
+      },
+      {
+        "word": "us",
+        "start": 115.27,
+        "end": 115.47,
+        "probability": 0.99831724
+      },
+      {
+        "word": "hope",
+        "start": 115.47,
+        "end": 115.69,
+        "probability": 0.99623245
+      },
+      {
+        "word": "that",
+        "start": 115.69,
+        "end": 115.88,
+        "probability": 0.97357994
+      },
+      {
+        "word": "in",
+        "start": 115.88,
+        "end": 116.00999999999999,
+        "probability": 0.9651784
+      },
+      {
+        "word": "the",
+        "start": 116.00999999999999,
+        "end": 116.19999999999999,
+        "probability": 0.98612016
+      },
+      {
+        "word": "future",
+        "start": 116.19999999999999,
+        "end": 116.47,
+        "probability": 0.9993117
+      },
+      {
+        "word": "the",
+        "start": 116.47,
+        "end": 116.75999999999999,
+        "probability": 0.45910615
+      },
+      {
+        "word": "technology",
+        "start": 116.75999999999999,
+        "end": 117.11,
+        "probability": 0.9976453
+      },
+      {
+        "word": "will",
+        "start": 117.11,
+        "end": 117.5,
+        "probability": 0.99234855
+      },
+      {
+        "word": "improve",
+        "start": 117.5,
+        "end": 117.86999999999999,
+        "probability": 0.99645483
+      },
+      {
+        "word": "and",
+        "start": 117.86999999999999,
+        "end": 118.11,
+        "probability": 0.8110582
+      },
+      {
+        "word": "we",
+        "start": 118.11,
+        "end": 118.44999999999999,
+        "probability": 0.7919264
+      },
+      {
+        "word": "will",
+        "start": 118.44999999999999,
+        "end": 118.77,
+        "probability": 0.9840215
+      },
+      {
+        "word": "be",
+        "start": 118.77,
+        "end": 118.94,
+        "probability": 0.9844213
+      },
+      {
+        "word": "able",
+        "start": 118.94,
+        "end": 119.16,
+        "probability": 0.9923959
+      },
+      {
+        "word": "to",
+        "start": 119.16,
+        "end": 119.41,
+        "probability": 0.80721694
+      },
+      {
+        "word": "create",
+        "start": 119.41,
+        "end": 119.85,
+        "probability": 0.9105668
+      },
+      {
+        "word": "digital",
+        "start": 119.85,
+        "end": 120.28999999999999,
+        "probability": 0.9644156
+      },
+      {
+        "word": "immortality.<|endoftext|>",
+        "start": 120.28999999999999,
+        "end": 122.11,
+        "probability": 0.97958946
+      }
+    ]
+  },
+  {
+    "start": 122.11,
+    "end": 124.28,
+    "text": "Is digital immortality our last hope?",
+    "words": [
+      {
+        "word": "Is",
+        "start": 122.11,
+        "end": 122.37,
+        "probability": 0.2858889
+      },
+      {
+        "word": "digital",
+        "start": 122.37,
+        "end": 122.67999999999999,
+        "probability": 0.79474694
+      },
+      {
+        "word": "immortality",
+        "start": 122.67999999999999,
+        "end": 123.2,
+        "probability": 0.99798596
+      },
+      {
+        "word": "our",
+        "start": 123.2,
+        "end": 123.67999999999999,
+        "probability": 0.99078065
+      },
+      {
+        "word": "last",
+        "start": 123.67999999999999,
+        "end": 123.92999999999999,
+        "probability": 0.9677139
+      },
+      {
+        "word": "hope?",
+        "start": 123.92999999999999,
+        "end": 124.28,
+        "probability": 0.96990967
+      }
+    ]
+  },
+  {
+    "start": 124.83,
+    "end": 128.93,
+    "text": "The star-like species only survive for approximately 1 to 10 million years.",
+    "words": [
+      {
+        "word": "The",
+        "start": 124.83,
+        "end": 125.31,
+        "probability": 0.8051956
+      },
+      {
+        "word": "star-like",
+        "start": 125.31,
+        "end": 125.75,
+        "probability": 0.35328603
+      },
+      {
+        "word": "species",
+        "start": 125.75,
+        "end": 126.11,
+        "probability": 0.99941844
+      },
+      {
+        "word": "only",
+        "start": 126.11,
+        "end": 126.49,
+        "probability": 0.99610704
+      },
+      {
+        "word": "survive",
+        "start": 126.49,
+        "end": 126.8,
+        "probability": 0.9163486
+      },
+      {
+        "word": "for",
+        "start": 126.8,
+        "end": 127.19,
+        "probability": 0.89107054
+      },
+      {
+        "word": "approximately",
+        "start": 127.19,
+        "end": 127.67,
+        "probability": 0.99663347
+      },
+      {
+        "word": "1",
+        "start": 127.67,
+        "end": 128.04,
+        "probability": 0.7319485
+      },
+      {
+        "word": "to",
+        "start": 128.04,
+        "end": 128.25,
+        "probability": 0.5872645
+      },
+      {
+        "word": "10",
+        "start": 128.25,
+        "end": 128.46,
+        "probability": 0.9813917
+      },
+      {
+        "word": "million",
+        "start": 128.46,
+        "end": 128.74,
+        "probability": 0.8937544
+      },
+      {
+        "word": "years.",
+        "start": 128.74,
+        "end": 128.93,
+        "probability": 0.94127667
+      }
+    ]
+  }
+]

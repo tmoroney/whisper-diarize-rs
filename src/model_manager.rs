@@ -129,7 +129,7 @@ impl ModelManager {
                 is_cancelled,
                 0.0,
                 70.0,
-                &format!("Whisper {}", model),
+                &format!("Downloading {}", model),
             )
             .await?
         } else {
@@ -140,7 +140,7 @@ impl ModelManager {
                 is_cancelled,
                 0.0,
                 100.0,
-                &format!("Whisper {}", model),
+                &format!("Downloading {}", model),
             )
             .await?
         };
@@ -184,7 +184,7 @@ impl ModelManager {
                         is_cancelled,
                         70.0,
                         20.0,
-                        "CoreML encoder",
+                        "Downloading CoreML encoder",
                     )
                     .await
                 {
@@ -194,13 +194,13 @@ impl ModelManager {
                             "Warning: CoreML encoder download failed ({}). Proceeding without CoreML encoder.",
                             e
                         );
-                        if let Some(cb) = progress { cb(100, "CoreML encoder"); }
+                        if let Some(cb) = progress { cb(100, "Failed to download CoreML encoder"); }
                         return Ok(model_path);
                     }
                 };
 
                 // Progress at 90% (download done, start extracting)
-                if let Some(cb) = progress { cb(90, "CoreML encoder"); }
+                if let Some(cb) = progress { cb(90, "Extracting CoreML encoder"); }
 
                 // Extract to same directory as the cached zip
                 let extract_dir = coreml_zip_path
@@ -235,7 +235,7 @@ impl ModelManager {
                         count += 1;
                         if let Some(cb) = progress {
                             let pct = 90.0 + (count as f32 / total as f32) * 10.0;
-                            cb(pct as i32, "CoreML encoder");
+                            cb(pct as i32, "Extracting CoreML encoder");
                         }
                     }
 
@@ -244,7 +244,7 @@ impl ModelManager {
                 }
 
                 // Final completion
-                if let Some(cb) = progress { cb(100, "CoreML encoder"); }
+                if let Some(cb) = progress { cb(100, "Extracted CoreML encoder"); }
             }
         }
 
@@ -266,7 +266,7 @@ impl ModelManager {
                 is_cancelled,
                 0.0,
                 100.0,
-                "VAD Model",
+                "Downloading VAD Model",
             )
             .await
     }
@@ -286,18 +286,18 @@ impl ModelManager {
 
         let seg_path = model_dir.join(&seg_name);
         if !seg_path.exists() {
-            if let Some(cb) = progress { cb(5, "Diarize Models"); }
+            if let Some(cb) = progress { cb(5, "Downloading Diarize Models"); }
             download_to(&seg_path, seg_url).await?;
-            if let Some(cb) = progress { cb(50, "Diarize Models"); }
+            if let Some(cb) = progress { cb(50, "Downloading Diarize Models"); }
         }
 
         if let Some(is_cancelled) = is_cancelled { if is_cancelled() { bail!("Cancelled"); } }
 
         let emb_path = model_dir.join(&emb_name);
         if !emb_path.exists() {
-            if let Some(cb) = progress { cb(55, "Diarize Models"); }
+            if let Some(cb) = progress { cb(55, "Downloading Diarize Models"); }
             download_to(&emb_path, emb_url).await?;
-            if let Some(cb) = progress { cb(100, "Diarize Models"); }
+            if let Some(cb) = progress { cb(100, "Downloaded Diarize Models"); }
         }
 
         Ok((seg_path, emb_path))

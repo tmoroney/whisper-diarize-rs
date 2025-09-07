@@ -1,10 +1,11 @@
-use crate::types::{SpeechSegment, Segment, WordTimestamp, TranscribeOptions, DiarizeOptions, ProgressFn, NewSegmentFn};
+use crate::types::{SpeechSegment, Segment, WordTimestamp, TranscribeOptions, DiarizeOptions, LabeledProgressFn, NewSegmentFn};
 use eyre::{Result, bail, WrapErr, OptionExt};
 use std::path::Path;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperSegment, DtwParameters, DtwMode, DtwModelPreset};
 use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::Mutex;
 use eyre::eyre;
+use crate::utils::cs_to_s;
 
 type ProgressCallbackType = once_cell::sync::Lazy<Mutex<Option<Box<dyn Fn(i32) + Send + Sync>>>>;
 static PROGRESS_CALLBACK: ProgressCallbackType = once_cell::sync::Lazy::new(|| Mutex::new(None));
@@ -49,8 +50,8 @@ fn setup_params(options: &TranscribeOptions) -> FullParams {
         params.set_language(Some(lang));
     }
 
-    // Set translation options
-    if options.translate.unwrap_or(false) {
+    // Set translation options (Whisper built-in to English)
+    if options.whisper_to_english.unwrap_or(false) {
         params.set_translate(true);
     }
 
@@ -213,16 +214,6 @@ pub fn create_context(
     }
 }
 
-fn round_to_places(value: f64, places: i32) -> f64 {
-    let factor = 10f64.powi(places);
-    (value * factor).round() / factor
-}
-
-// Convert centiseconds to seconds (1 centisecond = 10ms)
-fn cs_to_s(cs: i64) -> f64 {
-    cs as f64 * 0.01
-}
-
 // Returns true if `s` is *only* a control marker like "[_BEG_]" or "[_TT_320]".
 fn is_whole_control_token(s: &str) -> bool {
     let t = s.trim_matches('\0').trim();
@@ -375,7 +366,7 @@ pub async fn run_transcription_pipeline(
     speech_segments: Vec<SpeechSegment>,
     options: TranscribeOptions,
     diarize_options: Option<DiarizeOptions>,
-    progress_callback: Option<&ProgressFn>,
+    progress_callback: Option<&LabeledProgressFn>,
     new_segment_callback: Option<&NewSegmentFn>,
     abort_callback: Option<Box<dyn Fn() -> bool + Send + Sync>>,
 ) -> Result<Vec<Segment>> {
@@ -399,12 +390,10 @@ pub async fn run_transcription_pipeline(
         params.set_abort_callback_safe(abort_callback);
     }
 
-    // DEFINE PROGRESS CALLBACK
+    // DEFINE PROGRESS CALLBACK (no-op bridge; per-segment progress is emitted below)
     params.set_progress_callback_safe(|progress| {
         if let Ok(mut cb) = PROGRESS_CALLBACK.lock() {
-            if let Some(cb) = cb.as_mut() {
-                cb(progress);
-            }
+            if let Some(cb) = cb.as_mut() { cb(progress); }
         }
     });
 
@@ -563,7 +552,7 @@ pub async fn run_transcription_pipeline(
             if let Some(progress_callback) = progress_callback {
                 tracing::trace!("progress: {} * {} / 100", i, speech_segments.len());
                 let progress = ((i + 1) as f64 / speech_segments.len() as f64 * 100.0) as i32;
-                progress_callback(progress);
+                progress_callback(progress, "Transcribing audio");
             }
             segments.push(segment);
         }
@@ -574,6 +563,9 @@ pub async fn run_transcription_pipeline(
     tracing::debug!("Empty segments: {}", empty_segments);
     tracing::debug!("Total characters: {}", total_chars);
     tracing::debug!("Segments: {}", segments.len());
+
+    // Clear progress bridge to avoid dangling references beyond this async call
+    if let Ok(mut slot) = PROGRESS_CALLBACK.lock() { *slot = None; }
 
     return Ok(segments);
 }
