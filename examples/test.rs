@@ -1,4 +1,4 @@
-use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions, Callbacks, Segment};
+use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions, Callbacks, Segment, process_segments, PostProcessConfig};
 use eyre::Result;
 
 #[tokio::main]
@@ -12,7 +12,7 @@ async fn main() -> Result<(), eyre::Report> {
     options.lang = Some("en".into());
     options.enable_vad = Some(true);
     options.enable_diarize = Some(false);
-    options.translate_target = Some("fr".into());
+    //options.translate_target = Some("fr".into());
 
     // TODO: add note in transcript to show that it's been translated (word timestamps are not accurate)
 
@@ -30,10 +30,6 @@ async fn main() -> Result<(), eyre::Report> {
         .await?;
 
     println!("Transcribed {} segments", segments.len());
-
-    for segment in &segments {
-        println!("{}", segment.text);
-    }
 
     // save segments to json file
     let json = serde_json::to_string_pretty(&segments)?;

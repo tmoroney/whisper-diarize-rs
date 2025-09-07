@@ -55,14 +55,6 @@ impl Default for TranscribeOptions {
     }
 }
 
-#[derive(Clone, Debug)]
-pub struct DiarizeOptions {
-    pub segment_model_path: String,
-    pub embedding_model_path: String,
-    pub threshold: f32,
-    pub max_speakers: usize,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WordTimestamp {
     pub word: String,
@@ -84,10 +76,29 @@ pub struct Segment {
     pub words: Option<Vec<WordTimestamp>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubtitleCue {
+    pub start: f64,
+    pub end: f64,
+    /// 1..=max_lines lines, already split with natural breaks
+    pub lines: Vec<String>,
+    /// Words included in this cue (adjusted times, merged as needed)
+    pub words: Vec<WordTimestamp>,
+    pub speaker_id: Option<String>,
+}
+
 // Internal struct for VAD and Pyannote diarization segments
 #[derive(Debug, Clone)]
 pub struct SpeechSegment {
     pub start: f64,
     pub end: f64,
     pub samples: Vec<i16>,
+}
+
+#[derive(Clone, Debug)]
+pub struct DiarizeOptions {
+    pub segment_model_path: String,
+    pub embedding_model_path: String,
+    pub threshold: f32,
+    pub max_speakers: usize,
 }

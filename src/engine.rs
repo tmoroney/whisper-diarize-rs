@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use eyre::eyre;
 use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, NewSegmentFn};
+use crate::formatting::{VadMaskOracle, PostProcessConfig, process_segments, SilenceOracle};
+use crate::types::SubtitleCue;
 
 // callback type aliases are defined in crate::types
 
@@ -66,7 +68,7 @@ impl Engine {
         audio_path: &str,
         options: crate::TranscribeOptions,
         cb: Option<Callbacks<'_>>,
-    ) -> eyre::Result<Vec<crate::Segment>> {
+    ) -> eyre::Result<Vec<SubtitleCue>> {
         let cb = cb.unwrap_or_default();
         if !std::path::PathBuf::from(audio_path).exists() {
             eyre::bail!("audio file doesn't exist")
@@ -82,6 +84,7 @@ impl Engine {
 
         let mut speech_segments: Vec<SpeechSegment> = Vec::new();
         let mut diarize_options: Option<DiarizeOptions> = None;
+        let mut vad_mask: Option<VadMaskOracle> = None;
 
         if let Some(true) = options.enable_diarize {
             let seg_url = "https://github.com/thewh1teagle/pyannote-rs/releases/download/v0.1.0/segmentation-3.0.onnx";
@@ -130,8 +133,10 @@ impl Engine {
 
             // `vad::get_segments` expects a &str path; convert from PathBuf
             let vad_model_path_str = vad_model_path.to_string_lossy().to_string();
-            speech_segments = crate::vad::get_segments(&vad_model_path_str, &original_samples)
+            let (oracle, merged) = crate::vad::get_segments(&vad_model_path_str, &original_samples)
                 .map_err(|e| eyre!("{:?}", e))?;
+            speech_segments = merged;
+            vad_mask = Some(oracle);
         }
         else {
             speech_segments = vec![SpeechSegment {
@@ -180,7 +185,11 @@ impl Engine {
             }
         }
 
-        Ok(segments)
+        Ok(process_segments(
+            &segments,
+            &PostProcessConfig::default(),
+            vad_mask.as_ref().map(|o| o as &dyn SilenceOracle),
+        ))
     }
 
     pub async fn delete_whisper_model(&self, model_name: &str) -> eyre::Result<()> {
