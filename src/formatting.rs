@@ -15,6 +15,7 @@
 
 use serde::{Deserialize, Serialize};
 use crate::types::{WordTimestamp, Segment};
+use unicode_segmentation::UnicodeSegmentation;
 
 /// Internal working token type used during processing.
 #[derive(Clone, Debug)]
@@ -25,6 +26,7 @@ struct Tok {
     pub end: f64,
     pub prob: Option<f32>,
     pub speaker: Option<String>,
+    pub leading_space: bool, // whether original token text began with a space/newline
 }
 
 #[inline]
@@ -265,7 +267,16 @@ pub fn process_segments(
 
     let mut toks: Vec<Tok> = Vec::with_capacity(all.len());
     for (speaker, w) in all.into_iter() {
-        let (core, punc) = split_trailing_punct(&w.text);
+        let (core_raw, punc_raw) = split_trailing_punct(&w.text);
+        // Capture whether this token originally had a leading space/newline indicator
+        let leading_space = core_raw.starts_with(' ') || core_raw.starts_with('\n');
+        // Trim those indicators from core so rendering can decide spacing
+        let core_trimmed = core_raw.trim_start_matches(|c| c == ' ' || c == '\n');
+        let (core, punc) = (core_trimmed, punc_raw);
+        // Remove Unicode replacement characters that may appear due to lossy decoding
+        let core = core.replace('\u{FFFD}', "");
+        let punc = punc.replace('\u{FFFD}', "");
+        if core.is_empty() && punc.is_empty() { continue; }
         toks.push(Tok {
             word: core.to_string(),
             punc: punc.to_string(),
@@ -273,16 +284,20 @@ pub fn process_segments(
             end: w.end,
             prob: w.probability,
             speaker,
+            leading_space,
         });
     }
 
-    // 3) Clamp tiny words and adjust boundaries using gaps and (optional) silence oracle.
+    // 3) Merge subword continuation pieces (right token without leading space) into the previous token.
+    merge_continuations(&mut toks);
+
+    // 4) Clamp tiny words and adjust boundaries using gaps and (optional) silence oracle.
     clamp_and_merge_tiny_words(&mut toks, cfg, oracle);
 
-    // 4) Partition into groups by strong punctuation and long gaps.
+    // 5) Partition into groups by strong punctuation and long gaps.
     let groups = split_into_groups(&toks, cfg);
 
-    // 5) For each group, create 1..N cues respecting CPL/CPS, pauses, commas.
+    // 6) For each group, create 1..N cues respecting CPL/CPS, pauses, commas.
     let mut cues: Vec<Segment> = Vec::new();
     for g in groups {
         let mut i = 0;
@@ -298,6 +313,48 @@ pub fn process_segments(
 }
 
 // === Implementation details ===
+
+#[inline]
+fn is_ascii_word(s: &str) -> bool {
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphabetic())
+}
+
+/// Merge tokens where the right token is a continuation piece (no leading space)
+/// and both sides look like ASCII words (Latin). This avoids outputs like
+/// "trans" + "human" + "ism" and instead yields "transhumanism".
+fn merge_continuations(toks: &mut Vec<Tok>) {
+    if toks.is_empty() { return; }
+    let mut out: Vec<Tok> = Vec::with_capacity(toks.len());
+    for t in std::mem::take(toks).into_iter() {
+        if let Some(prev) = out.last_mut() {
+            // Case 1: punctuation-only token -> merge into previous token
+            if t.word.is_empty() && !t.punc.is_empty() {
+                // Append punctuation to previous without adding space
+                let merged = join_tokens(prev, &t, /*insert_space*/ false);
+                prev.word = merged.0;
+                prev.punc = merged.1;
+                prev.end = prev.end.max(t.end);
+                continue;
+            }
+            let right_cont = !t.leading_space;
+            let both_ascii_word = is_ascii_word(&prev.word) && is_ascii_word(&t.word);
+            let no_prev_punc = prev.punc.is_empty();
+            // Only merge if the boundary is essentially contiguous (tiny gap)
+            let tiny_gap = (t.start - prev.end) <= 0.03;
+            if right_cont && both_ascii_word && no_prev_punc && tiny_gap {
+                // Merge t into prev without inserting a space
+                let merged = join_tokens(prev, &t, /*insert_space*/ false);
+                prev.word = merged.0;
+                prev.punc = merged.1;
+                prev.end = prev.end.max(t.end);
+                // leading_space remains from prev (merged.2)
+                continue;
+            }
+        }
+        out.push(t);
+    }
+    *toks = out;
+}
 
 fn split_trailing_punct(s: &str) -> (&str, &str) {
     let bytes = s.as_bytes();
@@ -361,19 +418,21 @@ fn clamp_and_merge_tiny_words(toks: &mut Vec<Tok>, cfg: &PostProcessConfig, orac
         if dur < cfg.min_word_dur && i + 1 < toks.len() {
             // merge i into i+1
             let mut next = toks[i + 1].clone();
-            let merged_word = join_tokens(&toks[i], &next);
+            let merged_word = join_tokens(&toks[i], &next, cfg.insert_interword_space);
             next.word = merged_word.0;
             next.punc = merged_word.1;
             next.start = toks[i].start.min(next.start);
+            next.leading_space = merged_word.2;
             out.push(next);
             i += 2;
         } else if dur < cfg.min_word_dur && i > 0 {
             // merge into previous
             let mut prev = out.pop().unwrap();
-            let merged_word = join_tokens(&prev, &toks[i]);
+            let merged_word = join_tokens(&prev, &toks[i], cfg.insert_interword_space);
             prev.word = merged_word.0;
             prev.punc = merged_word.1;
             prev.end = prev.end.max(toks[i].end);
+            prev.leading_space = merged_word.2;
             out.push(prev);
             i += 1;
         } else {
@@ -384,14 +443,15 @@ fn clamp_and_merge_tiny_words(toks: &mut Vec<Tok>, cfg: &PostProcessConfig, orac
     *toks = out;
 }
 
-fn join_tokens(a: &Tok, b: &Tok) -> (String, String) {
+fn join_tokens(a: &Tok, b: &Tok, insert_space: bool) -> (String, String, bool) {
     let mut s = String::new();
     if !a.word.is_empty() { s.push_str(&a.word); }
     if !a.punc.is_empty() { s.push_str(&a.punc); }
-    if !a.word.is_empty() && !b.word.is_empty() { s.push(' '); }
+    if insert_space && b.leading_space && !b.word.is_empty() && !s.ends_with(' ') { s.push(' '); }
     s.push_str(&b.word);
     let p = b.punc.clone();
-    (s, p)
+    // Leading-space flag for merged token should be the first component's flag
+    (s, p, a.leading_space)
 }
 
 fn split_into_groups(toks: &[Tok], cfg: &PostProcessConfig) -> Vec<Vec<Tok>> {
@@ -414,7 +474,7 @@ fn build_cue(group: &[Tok], start_idx: usize, cfg: &PostProcessConfig) -> (usize
     let mut j = start_idx + 1;
     loop {
         let w_slice = &group[start_idx..j];
-        let (t0, t1, chars) = slice_stats(w_slice);
+        let (t0, t1, chars) = slice_stats(w_slice, cfg);
         let dur = (t1 - t0).max(0.001);
         let cps = chars as f64 / dur;
 
@@ -425,7 +485,7 @@ fn build_cue(group: &[Tok], start_idx: usize, cfg: &PostProcessConfig) -> (usize
     }
 
     let w_slice = &group[start_idx..j];
-    let (t0, t1, _chars) = slice_stats(w_slice);
+    let (t0, t1, _chars) = slice_stats(w_slice, cfg);
 
     // Decide line split(s)
     let lines = split_into_lines(w_slice, cfg);
@@ -452,20 +512,22 @@ fn render_token(t: &Tok) -> String {
     s
 }
 
-fn slice_stats(slice: &[Tok]) -> (f64, f64, usize) {
+fn slice_stats(slice: &[Tok], cfg: &PostProcessConfig) -> (f64, f64, usize) {
     let t0 = slice.first().map(|t| t.start).unwrap_or(0.0);
     let t1 = slice.last().map(|t| t.end).unwrap_or(t0);
-    let chars: usize = slice
-        .iter()
-        .map(|t| t.word.len() + t.punc.len())
-        .sum::<usize>()
-        + slice.len().saturating_sub(1); // spaces between words
+    let chars: usize = slice_chars(slice, cfg);
     (t0, t1, chars)
 }
 
 fn split_into_lines(slice: &[Tok], cfg: &PostProcessConfig) -> Vec<String> {
     if slice.is_empty() { return vec![String::new()]; }
-    if cfg.max_lines <= 1 { return vec![render_slice(slice)]; }
+    if cfg.max_lines <= 1 { return vec![render_slice(slice, cfg)]; }
+
+    // If total length comfortably fits into one line, don't split.
+    let total_chars = slice_chars(slice, cfg);
+    if total_chars <= cfg.max_chars_per_line {
+        return vec![render_slice(slice, cfg)];
+    }
 
     // Prepare candidate split indices k (between words): 1..slice.len()-1
     let mut cands: Vec<usize> = Vec::new();
@@ -480,22 +542,22 @@ fn split_into_lines(slice: &[Tok], cfg: &PostProcessConfig) -> Vec<String> {
         let long_gap = gap >= cfg.split_gap_sec;
         // Comma allowed only if line would be long otherwise
         let comma_ok = is_comma_like(left_term)
-            && slice_chars(slice) >= cfg.comma_min_chars_before_allow;
+            && slice_chars(slice, cfg) >= cfg.comma_min_chars_before_allow;
         // Always include at least a few fallback cands
         if is_term || long_gap || comma_ok || k % 2 == 0 || k == slice.len() / 2 {
             cands.push(k);
         }
     }
-    if cands.is_empty() { return vec![render_slice(slice)]; }
+    if cands.is_empty() { return vec![render_slice(slice, cfg)]; }
 
     // Score candidates and choose best
     let mut best_k = cands[0];
     let mut best_score = f64::INFINITY;
     for &k in &cands {
-        let lchars = slice_chars(&slice[..k]);
-        let rchars = slice_chars(&slice[k..]);
-        let ltext = render_slice(&slice[..k]);
-        let rtext = render_slice(&slice[k..]);
+        let lchars = slice_chars(&slice[..k], cfg);
+        let rchars = slice_chars(&slice[k..], cfg);
+        let ltext = render_slice(&slice[..k], cfg);
+        let rtext = render_slice(&slice[k..], cfg);
         let lwords = k;
         let rwords = slice.len() - k;
 
@@ -519,28 +581,38 @@ fn split_into_lines(slice: &[Tok], cfg: &PostProcessConfig) -> Vec<String> {
         let long_gap = (gap >= cfg.split_gap_sec) as i32;
         let bonus = (-0.6 * is_term as f64) + (-0.3 * long_gap as f64) + (0.15 * is_comma as f64);
 
-        let score = len_pen + word_pen + syntax_pen + bonus;
+        // Strongly discourage breaking inside a word: if the right-side first token
+        // has no leading space, it's likely a continuation piece (BPE-style).
+        let continuation_pen = if !slice[k].leading_space { 5.0 } else { 0.0 };
+
+        let score = len_pen + word_pen + syntax_pen + bonus + continuation_pen;
         if score < best_score { best_score = score; best_k = k; }
     }
 
-    let left = render_slice(&slice[..best_k]);
-    let right = render_slice(&slice[best_k..]);
+    let left = render_slice(&slice[..best_k], cfg);
+    let right = render_slice(&slice[best_k..], cfg);
 
     vec![left, right]
 }
 
-fn render_slice(slice: &[Tok]) -> String {
+fn render_slice(slice: &[Tok], cfg: &PostProcessConfig) -> String {
     let mut s = String::new();
     for (i, t) in slice.iter().enumerate() {
-        if i > 0 { s.push(' '); }
+        if cfg.insert_interword_space && t.leading_space && i > 0 { s.push(' '); }
         s.push_str(&t.word);
         s.push_str(&t.punc);
     }
     s
 }
 
-fn slice_chars(slice: &[Tok]) -> usize {
-    slice.iter().map(|t| t.word.len() + t.punc.len()).sum::<usize>() + slice.len().saturating_sub(1)
+fn slice_chars(slice: &[Tok], cfg: &PostProcessConfig) -> usize {
+    let core_len: usize = if cfg.use_grapheme_len {
+        slice.iter().map(|t| UnicodeSegmentation::graphemes(t.word.as_str(), true).count() + UnicodeSegmentation::graphemes(t.punc.as_str(), true).count()).sum()
+    } else {
+        slice.iter().map(|t| t.word.len() + t.punc.len()).sum()
+    };
+    let spaces = if cfg.insert_interword_space { slice.iter().skip(1).filter(|t| t.leading_space).count() } else { 0 };
+    core_len + spaces
 }
 
 fn length_penalty(chars: usize, cap: usize) -> f64 {

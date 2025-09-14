@@ -239,7 +239,7 @@ fn strip_embedded_control_markers(s: &str) -> String {
     result
 }
 
-fn get_word_timestamps(seg: &WhisperSegment) -> Vec<WordTimestamp> {
+fn get_token_timestamps(seg: &WhisperSegment) -> Vec<WordTimestamp> {
     #[derive(Clone)]
     struct Tok {
         text: String,
@@ -305,47 +305,18 @@ fn get_word_timestamps(seg: &WhisperSegment) -> Vec<WordTimestamp> {
         bounds.push((start, end));
     }
 
-    // Group into words using "leading space/newline starts a new word".
-    let mut words = Vec::<WordTimestamp>::new();
-    let mut cur = String::new();
-    let mut ps: Vec<f32> = Vec::new();
-    let mut w_start = bounds[0].0;
-    let mut w_end = bounds[0].1;
-    let mut started = false;
-
+    // Emit one entry per token as a token-level span; leave word grouping to formatting.rs
+    let mut spans = Vec::<WordTimestamp>::new();
     for (i, t) in toks.iter().enumerate() {
-        let s = t.text.as_str();
-        let new_word_boundary = s.starts_with(' ') || s.starts_with('\n');
-
-        if new_word_boundary && started {
-            let w = cur.trim();
-            if !w.is_empty() {
-                let p = (!ps.is_empty()).then(|| ps.iter().copied().sum::<f32>() / ps.len() as f32);
-                words.push(WordTimestamp { text: w.to_string(), start: w_start, end: w_end, probability: p });
-            }
-            cur.clear();
-            ps.clear();
-            started = false;
-        }
-
-        if !started {
-            w_start = bounds[i].0;
-            started = true;
-        }
-        w_end = bounds[i].1;
-        cur.push_str(s);
-        ps.push(t.p);
+        let (s, e) = bounds[i];
+        spans.push(WordTimestamp {
+            text: t.text.clone(),
+            start: s,
+            end: e,
+            probability: Some(t.p),
+        });
     }
-
-    if started {
-        let w = cur.trim();
-        if !w.is_empty() {
-            let p = (!ps.is_empty()).then(|| ps.iter().copied().sum::<f32>() / ps.len() as f32);
-            words.push(WordTimestamp { text: w.to_string(), start: w_start, end: w_end, probability: p });
-        }
-    }
-
-    words
+    spans
 }
 
 // Pass in path to normalised mono 16k PCM16 audio file
@@ -459,7 +430,7 @@ pub async fn run_transcription_pipeline(
                 // Interpolated times are already absolute via approx_* (which include base_offset)
                 interpolate_word_timestamps(&text, approx_start, approx_end)
             } else {
-                let mut w = get_word_timestamps(&seg);
+                let mut w = get_token_timestamps(&seg);
                 for t in &mut w { t.start += base_offset; t.end += base_offset; } // Offset all word timestamps by base_offset
                 w
             };
