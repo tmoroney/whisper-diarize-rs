@@ -8,11 +8,12 @@ async fn main() -> Result<(), eyre::Report> {
     let mut engine = Engine::new(EngineConfig::default());
 
     let mut options = TranscribeOptions::default();
-    options.model = "base.en".into();
-    options.lang = Some("en".into());
+    options.model = "small".into();
+    options.lang = Some("auto".into());
     options.enable_vad = Some(true);
-    options.enable_diarize = Some(false);
-    //options.translate_target = Some("fr".into());
+    options.enable_diarize = Some(true);
+    //options.translate_target = Some("en".into());
+    //options.whisper_to_english = Some(true);
 
     // TODO: add note in transcript to show that it's been translated (word timestamps are not accurate)
 
@@ -26,7 +27,7 @@ async fn main() -> Result<(), eyre::Report> {
     };
 
     let overrides = FormattingOverrides {
-        max_chars_per_line: Some(32),
+        //max_chars_per_line: Some(32),
         ..Default::default()
     };
 

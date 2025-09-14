@@ -1,8 +1,7 @@
 use std::path::PathBuf;
 use eyre::eyre;
-use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, NewSegmentFn};
+use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, NewSegmentFn, Segment};
 use crate::formatting::{VadMaskOracle, process_segments, SilenceOracle, PostProcessConfig, FormattingOverrides, apply_overrides};
-use crate::types::SubtitleCue;
 
 // callback type aliases are defined in crate::types
 
@@ -69,7 +68,7 @@ impl Engine {
         options: crate::TranscribeOptions,
         formatting_overrides: Option<FormattingOverrides>,
         cb: Option<Callbacks<'_>>,
-    ) -> eyre::Result<Vec<SubtitleCue>> {
+    ) -> eyre::Result<Vec<Segment>> {
         let cb = cb.unwrap_or_default();
         if !std::path::PathBuf::from(audio_path).exists() {
             eyre::bail!("audio file doesn't exist")

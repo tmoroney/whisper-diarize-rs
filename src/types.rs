@@ -57,7 +57,7 @@ impl Default for TranscribeOptions {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WordTimestamp {
-    pub word: String,
+    pub text: String,
     pub start: f64,
     pub end: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -71,19 +71,8 @@ pub struct Segment {
     pub end: f64,
     pub text: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub speaker_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub words: Option<Vec<WordTimestamp>>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SubtitleCue {
-    pub start: f64,
-    pub end: f64,
-    /// 1..=max_lines lines, already split with natural breaks
-    pub lines: Vec<String>,
-    /// Words included in this cue (adjusted times, merged as needed)
-    pub words: Vec<WordTimestamp>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub speaker_id: Option<String>,
 }
 

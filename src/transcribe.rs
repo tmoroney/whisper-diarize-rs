@@ -284,7 +284,7 @@ fn get_word_timestamps(seg: &WhisperSegment) -> Vec<WordTimestamp> {
             let w = cur.trim();
             if !w.is_empty() {
                 let p = (!ps.is_empty()).then(|| ps.iter().copied().sum::<f32>() / ps.len() as f32);
-                words.push(WordTimestamp { word: w.to_string(), start: w_start, end: w_end, probability: p });
+                words.push(WordTimestamp { text: w.to_string(), start: w_start, end: w_end, probability: p });
             }
             cur.clear();
             ps.clear();
@@ -304,7 +304,7 @@ fn get_word_timestamps(seg: &WhisperSegment) -> Vec<WordTimestamp> {
         let w = cur.trim();
         if !w.is_empty() {
             let p = (!ps.is_empty()).then(|| ps.iter().copied().sum::<f32>() / ps.len() as f32);
-            words.push(WordTimestamp { word: w.to_string(), start: w_start, end: w_end, probability: p });
+            words.push(WordTimestamp { text: w.to_string(), start: w_start, end: w_end, probability: p });
         }
     }
 

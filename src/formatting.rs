@@ -14,7 +14,7 @@
 //   rely on inter-word gaps and simple thresholds.
 
 use serde::{Deserialize, Serialize};
-use crate::types::{WordTimestamp, Segment, SubtitleCue};
+use crate::types::{WordTimestamp, Segment};
 
 /// Internal working token type used during processing.
 #[derive(Clone, Debug)]
@@ -236,7 +236,7 @@ pub fn process_segments(
     segments: &[Segment],
     cfg: &PostProcessConfig,
     oracle: Option<&dyn SilenceOracle>,
-) -> Vec<SubtitleCue> {
+) -> Vec<Segment> {
     let oracle = oracle.unwrap_or(&NoSilence);
 
     // 1) Collect words from all segments, keep speaker_id continuity.
@@ -251,7 +251,7 @@ pub fn process_segments(
             // fallback: treat the whole segment as one word if needed
             if !seg.text.trim().is_empty() {
                 all.push((speaker.clone(), WordTimestamp {
-                    word: seg.text.clone(), start: seg.start, end: seg.end, probability: None,
+                    text: seg.text.clone(), start: seg.start, end: seg.end, probability: None,
                 }));
             }
         }
@@ -262,7 +262,7 @@ pub fn process_segments(
 
     let mut toks: Vec<Tok> = Vec::with_capacity(all.len());
     for (speaker, w) in all.into_iter() {
-        let (core, punc) = split_trailing_punct(&w.word);
+        let (core, punc) = split_trailing_punct(&w.text);
         toks.push(Tok {
             word: core.to_string(),
             punc: punc.to_string(),
@@ -280,7 +280,7 @@ pub fn process_segments(
     let groups = split_into_groups(&toks, cfg);
 
     // 5) For each group, create 1..N cues respecting CPL/CPS, pauses, commas.
-    let mut cues: Vec<SubtitleCue> = Vec::new();
+    let mut cues: Vec<Segment> = Vec::new();
     for g in groups {
         let mut i = 0;
         while i < g.len() {
@@ -406,7 +406,7 @@ fn split_into_groups(toks: &[Tok], cfg: &PostProcessConfig) -> Vec<Vec<Tok>> {
     groups
 }
 
-fn build_cue(group: &[Tok], start_idx: usize, cfg: &PostProcessConfig) -> (usize, SubtitleCue) {
+fn build_cue(group: &[Tok], start_idx: usize, cfg: &PostProcessConfig) -> (usize, Segment) {
     // Expand j while respecting max_sub_dur and a soft CPS cap; we’ll further split into lines later.
     let mut j = start_idx + 1;
     loop {
@@ -426,11 +426,15 @@ fn build_cue(group: &[Tok], start_idx: usize, cfg: &PostProcessConfig) -> (usize
 
     // Decide line split(s)
     let lines = split_into_lines(w_slice, cfg);
+    let text = lines.join("\n");
     let speaker = w_slice.first().and_then(|t| t.speaker.clone());
 
-    let words = w_slice.iter().map(|t| WordTimestamp { word: render_token(t), start: t.start, end: t.end, probability: t.prob }).collect();
+    let words: Vec<WordTimestamp> = w_slice
+        .iter()
+        .map(|t| WordTimestamp { text: render_token(t), start: t.start, end: t.end, probability: t.prob })
+        .collect();
 
-    let cue = SubtitleCue { start: t0.max(0.0), end: t1, lines, words, speaker_id: speaker };
+    let cue = Segment { start: t0.max(0.0), end: t1, text, words: Some(words), speaker_id: speaker };
     (j, cue)
 }
 
@@ -576,12 +580,12 @@ mod tests {
         ];
 
         // Build a pseudo segment and run
-        let seg = Segment { start: 0.0, end: 1.1, text: String::new(), speaker_id: None, words: Some(words.iter().map(|t| WordTimestamp{word: format!("{}{}", t.word, t.punc), start: t.start, end: t.end, probability: None}).collect()) };
+        let seg = Segment { start: 0.0, end: 1.1, text: String::new(), speaker_id: None, words: Some(words.iter().map(|t| WordTimestamp{text: format!("{}{}", t.word, t.punc), start: t.start, end: t.end, probability: None}).collect()) };
         let cues = process_segments(&[seg], &cfg, None);
         assert!(!cues.is_empty());
-        // Expect two lines split as "I think" | "I would like to."
-        let lines = &cues[0].lines;
-        assert_eq!(lines.len(), 2);
-        assert!(lines[0].starts_with("I think"));
+        // Expect two lines split as "I think" and "I would like to." joined with a newline
+        let text = &cues[0].text;
+        assert!(text.contains('\n'));
+        assert!(text.starts_with("I think"));
     }
 }

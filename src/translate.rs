@@ -187,7 +187,7 @@ fn regenerate_words_uniform(seg: &mut Segment) {
     for (i, w) in tokens.into_iter().enumerate() {
         let t0 = start + dur * (i as f64) / (n as f64);
         let t1 = start + dur * ((i + 1) as f64) / (n as f64);
-        words.push(WordTimestamp { word: w, start: t0, end: t1, probability: None });
+        words.push(WordTimestamp { text: w, start: t0, end: t1, probability: None });
     }
 
     seg.words = Some(words);
