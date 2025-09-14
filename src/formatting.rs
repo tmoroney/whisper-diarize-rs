@@ -27,6 +27,40 @@ struct Tok {
     pub speaker: Option<String>,
 }
 
+/// Optional overrides that can be applied on top of a language/profile preset.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct FormattingOverrides {
+    pub max_chars_per_line: Option<usize>,
+    pub max_lines: Option<usize>,
+    pub cps_cap: Option<f64>,
+    pub split_gap_sec: Option<f64>,
+    pub comma_min_chars_before_allow: Option<usize>,
+    pub min_word_dur: Option<f64>,
+    pub min_sub_dur: Option<f64>,
+    pub max_sub_dur: Option<f64>,
+    pub soft_max_words_per_line: Option<usize>,
+    pub insert_interword_space: Option<bool>,
+    pub use_grapheme_len: Option<bool>,
+    pub enforce_kinsoku: Option<bool>,
+    pub allow_comma_split: Option<bool>,
+}
+
+pub fn apply_overrides(cfg: &mut PostProcessConfig, ov: &FormattingOverrides) {
+    if let Some(v) = ov.max_chars_per_line { cfg.max_chars_per_line = v; }
+    if let Some(v) = ov.max_lines { cfg.max_lines = v; }
+    if let Some(v) = ov.cps_cap { cfg.cps_cap = v; }
+    if let Some(v) = ov.split_gap_sec { cfg.split_gap_sec = v; }
+    if let Some(v) = ov.comma_min_chars_before_allow { cfg.comma_min_chars_before_allow = v; }
+    if let Some(v) = ov.min_word_dur { cfg.min_word_dur = v; }
+    if let Some(v) = ov.min_sub_dur { cfg.min_sub_dur = v; }
+    if let Some(v) = ov.max_sub_dur { cfg.max_sub_dur = v; }
+    if let Some(v) = ov.soft_max_words_per_line { cfg.soft_max_words_per_line = v; }
+    if let Some(v) = ov.insert_interword_space { cfg.insert_interword_space = v; }
+    if let Some(v) = ov.use_grapheme_len { cfg.use_grapheme_len = v; }
+    if let Some(v) = ov.enforce_kinsoku { cfg.enforce_kinsoku = v; }
+    if let Some(v) = ov.allow_comma_split { cfg.allow_comma_split = v; }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostProcessConfig {
     /// Max characters per rendered line (CPL)
@@ -71,6 +105,27 @@ impl Default for PostProcessConfig {
             allow_comma_split: true,
         }
     }
+}
+
+impl PostProcessConfig {
+    /// Build a config from a ScriptProfile preset.
+    pub fn with_profile(p: ScriptProfile) -> Self {
+        let mut cfg = Self::default();
+        apply_profile(&mut cfg, p);
+        cfg
+    }
+
+    /// Build a config from a language code by inferring the appropriate ScriptProfile.
+    pub fn for_language(lang: &str) -> Self {
+        Self::with_profile(profile_for_lang(lang))
+    }
+
+    /// Convenience constructors for common profiles
+    pub fn latin() -> Self { Self::with_profile(ScriptProfile::Latin) }
+    pub fn cjk() -> Self { Self::with_profile(ScriptProfile::CJK) }
+    pub fn se_asian_no_space() -> Self { Self::with_profile(ScriptProfile::SEAsianNoSpace) }
+    pub fn rtl() -> Self { Self::with_profile(ScriptProfile::RTL) }
+    pub fn indic() -> Self { Self::with_profile(ScriptProfile::Indic) }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -179,28 +234,10 @@ impl SilenceOracle for VadMaskOracle {
 /// Main entry: post-process whisper segments into readable subtitle cues.
 pub fn process_segments(
     segments: &[Segment],
-    lang: Option<&str>,
-    profile: Option<ScriptProfile>,
-    cfg: Option<&PostProcessConfig>,
+    cfg: &PostProcessConfig,
     oracle: Option<&dyn SilenceOracle>,
 ) -> Vec<SubtitleCue> {
     let oracle = oracle.unwrap_or(&NoSilence);
-
-    // Resolve configuration: use provided cfg as-is, or build default + profile
-    let cfg_local;
-    let cfg: &PostProcessConfig = if let Some(c) = cfg {
-        c
-    } else {
-        cfg_local = {
-            let mut c = PostProcessConfig::default();
-            let prof = profile
-                .or_else(|| lang.map(profile_for_lang))
-                .unwrap_or(ScriptProfile::Latin);
-            apply_profile(&mut c, prof);
-            c
-        };
-        &cfg_local
-    };
 
     // 1) Collect words from all segments, keep speaker_id continuity.
     let mut all: Vec<(Option<String>, WordTimestamp)> = Vec::new();
@@ -540,7 +577,7 @@ mod tests {
 
         // Build a pseudo segment and run
         let seg = Segment { start: 0.0, end: 1.1, text: String::new(), speaker_id: None, words: Some(words.iter().map(|t| WordTimestamp{word: format!("{}{}", t.word, t.punc), start: t.start, end: t.end, probability: None}).collect()) };
-        let cues = process_segments(&[seg], None, None, Some(&cfg), None);
+        let cues = process_segments(&[seg], &cfg, None);
         assert!(!cues.is_empty());
         // Expect two lines split as "I think" | "I would like to."
         let lines = &cues[0].lines;

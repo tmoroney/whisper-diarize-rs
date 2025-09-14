@@ -320,7 +320,7 @@ pub async fn run_transcription_pipeline(
     progress_callback: Option<&LabeledProgressFn>,
     new_segment_callback: Option<&NewSegmentFn>,
     abort_callback: Option<Box<dyn Fn() -> bool + Send + Sync>>,
-) -> Result<Vec<Segment>> {
+) -> Result<(Vec<Segment>, Option<String>)> {
     tracing::debug!("Transcribe called with {:?}", options);
 
     // Create Whisper state
@@ -357,6 +357,13 @@ pub async fn run_transcription_pipeline(
     // List for subtitle segments
     let mut segments: Vec<Segment> = Vec::with_capacity(speech_segments.len());
     let mut previous_text: Option<String> = None;
+    let mut detected_lang: Option<String> = None;
+
+    if let Some(lang) = options.lang.as_deref() {
+        if lang != "auto" {
+            detected_lang = Some(lang.to_string());
+        }
+    }
 
     for (i, speech_segment) in speech_segments.iter().enumerate() {
         let original_samples = speech_segment.samples.clone();
@@ -372,6 +379,13 @@ pub async fn run_transcription_pipeline(
 
         // Transcribe the segment
         state.full(params.clone(), &samples).context("failed to transcribe")?;
+
+        // If no language was specified, detect it
+        if detected_lang.is_none() {
+            let id = state.full_lang_id_from_state();
+            detected_lang = Some(whisper_rs::get_lang_str(id).unwrap_or("en").to_string()); // convert id to language code
+        }
+
         let num_segments = state.full_n_segments();
         tracing::debug!("found {} sentence segments", num_segments);
 
@@ -509,8 +523,6 @@ pub async fn run_transcription_pipeline(
         }
     }
 
-    // TODO: Add post-processing to format segments according to formatting options
-
     tracing::debug!("Empty segments: {}", empty_segments);
     tracing::debug!("Total characters: {}", total_chars);
     tracing::debug!("Segments: {}", segments.len());
@@ -518,5 +530,5 @@ pub async fn run_transcription_pipeline(
     // Clear progress bridge to avoid dangling references beyond this async call
     if let Ok(mut slot) = PROGRESS_CALLBACK.lock() { *slot = None; }
 
-    return Ok(segments);
+    return Ok((segments, detected_lang));
 }

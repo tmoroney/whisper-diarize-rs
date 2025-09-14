@@ -41,9 +41,9 @@
   },
   {
     "start": 2.2800000000000002,
-    "end": 4.28,
+    "end": 3.9400000000000004,
     "lines": [
-      "If not, we believe that you should have."
+      "If not, we believe that you should"
     ],
     "words": [
       {
@@ -87,7 +87,17 @@
         "start": 3.7300000000000004,
         "end": 3.9400000000000004,
         "probability": 0.93703836
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 3.9400000000000004,
+    "end": 4.28,
+    "lines": [
+      "have."
+    ],
+    "words": [
       {
         "word": "have.",
         "start": 3.9400000000000004,
@@ -157,9 +167,9 @@
   },
   {
     "start": 7.74,
-    "end": 10.100000000000001,
+    "end": 9.75,
     "lines": [
-      "to the evolution of humanity, and the continual"
+      "to the evolution of humanity, and the"
     ],
     "words": [
       {
@@ -197,23 +207,23 @@
         "start": 9.4575,
         "end": 9.75,
         "probability": 0.82114947
-      },
-      {
-        "word": "continual",
-        "start": 9.75,
-        "end": 10.100000000000001,
-        "probability": 0.91005373
       }
     ],
     "speaker_id": null
   },
   {
-    "start": 10.100000000000001,
-    "end": 12.31,
+    "start": 9.75,
+    "end": 11.510000000000002,
     "lines": [
-      "growth of the human race, due to its present"
+      "continual growth of the human race,"
     ],
     "words": [
+      {
+        "word": "continual",
+        "start": 9.75,
+        "end": 10.100000000000001,
+        "probability": 0.91005373
+      },
       {
         "word": "growth",
         "start": 10.100000000000001,
@@ -243,7 +253,17 @@
         "start": 10.92,
         "end": 11.510000000000002,
         "probability": 0.585675
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 11.510000000000002,
+    "end": 13.45,
+    "lines": [
+      "due to its present near future and"
+    ],
+    "words": [
       {
         "word": "due",
         "start": 11.510000000000002,
@@ -261,17 +281,7 @@
         "start": 11.920000000000002,
         "end": 12.31,
         "probability": 0.78585196
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 12.629999999999999,
-    "end": 14.52,
-    "lines": [
-      "near future and long-term threats that"
-    ],
-    "words": [
+      },
       {
         "word": "near",
         "start": 12.629999999999999,
@@ -289,7 +299,17 @@
         "start": 13.219999999999999,
         "end": 13.45,
         "probability": 0.94882196
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 13.45,
+    "end": 15.07,
+    "lines": [
+      "long-term threats that society is"
+    ],
+    "words": [
       {
         "word": "long-term",
         "start": 13.45,
@@ -307,17 +327,7 @@
         "start": 14.18,
         "end": 14.52,
         "probability": 0.6640872
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 14.52,
-    "end": 15.51,
-    "lines": [
-      "society is facing."
-    ],
-    "words": [
+      },
       {
         "word": "society",
         "start": 14.52,
@@ -329,7 +339,17 @@
         "start": 14.84,
         "end": 15.07,
         "probability": 0.9933314
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 15.07,
+    "end": 15.51,
+    "lines": [
+      "facing."
+    ],
+    "words": [
       {
         "word": "facing.",
         "start": 15.07,
@@ -341,9 +361,9 @@
   },
   {
     "start": 16.349999999999998,
-    "end": 18.5425,
+    "end": 17.86,
     "lines": [
-      "Transhumanism will be the key to our survival,"
+      "Transhumanism will be the key to"
     ],
     "words": [
       {
@@ -381,7 +401,17 @@
         "start": 17.7,
         "end": 17.86,
         "probability": 0.944611
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 17.86,
+    "end": 19.13,
+    "lines": [
+      "our survival, and we all need to"
+    ],
+    "words": [
       {
         "word": "our",
         "start": 17.86,
@@ -393,17 +423,7 @@
         "start": 18.06,
         "end": 18.5425,
         "probability": 0.69497705
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 18.5425,
-    "end": 19.88,
-    "lines": [
-      "and we all need to get on board before"
-    ],
-    "words": [
+      },
       {
         "word": "and we",
         "start": 18.5425,
@@ -427,7 +447,17 @@
         "start": 19.02,
         "end": 19.13,
         "probability": 0.9974265
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 19.13,
+    "end": 20.5,
+    "lines": [
+      "get on board before it's too late."
+    ],
+    "words": [
       {
         "word": "get",
         "start": 19.13,
@@ -451,17 +481,7 @@
         "start": 19.65,
         "end": 19.88,
         "probability": 0.936547
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 19.88,
-    "end": 20.5,
-    "lines": [
-      "it's too late."
-    ],
-    "words": [
+      },
       {
         "word": "it's",
         "start": 19.88,
@@ -485,9 +505,9 @@
   },
   {
     "start": 20.98,
-    "end": 22.42,
+    "end": 21.93,
     "lines": [
-      "We're going to convince you today of why"
+      "We're going to convince you today"
     ],
     "words": [
       {
@@ -519,7 +539,17 @@
         "start": 21.71,
         "end": 21.93,
         "probability": 0.98761284
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 21.93,
+    "end": 24.37,
+    "lines": [
+      "of why transhumanism is our last hope."
+    ],
+    "words": [
       {
         "word": "of",
         "start": 21.93,
@@ -531,17 +561,7 @@
         "start": 22.150000000000002,
         "end": 22.42,
         "probability": 0.9282809
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 22.42,
-    "end": 24.37,
-    "lines": [
-      "transhumanism is our last hope."
-    ],
-    "words": [
+      },
       {
         "word": "transhumanism",
         "start": 22.42,
@@ -611,9 +631,9 @@
   },
   {
     "start": 35.160000000000004,
-    "end": 37.25,
+    "end": 36.6,
     "lines": [
-      "scientists have been creating bionic arms,"
+      "scientists have been creating bionic"
     ],
     "words": [
       {
@@ -645,23 +665,23 @@
         "start": 36.08,
         "end": 36.6,
         "probability": 0.92077935
-      },
-      {
-        "word": "arms,",
-        "start": 36.6,
-        "end": 37.25,
-        "probability": 0.64361084
       }
     ],
     "speaker_id": null
   },
   {
-    "start": 37.25,
+    "start": 36.6,
     "end": 39.05,
     "lines": [
-      "genetically improved animals, and have"
+      "arms, genetically improved animals, and have"
     ],
     "words": [
+      {
+        "word": "arms,",
+        "start": 36.6,
+        "end": 37.25,
+        "probability": 0.64361084
+      },
       {
         "word": "genetically",
         "start": 37.25,
@@ -697,9 +717,9 @@
   },
   {
     "start": 39.05,
-    "end": 41.620000000000005,
+    "end": 40.94,
     "lines": [
-      "even suggested the idea of digital immortality."
+      "even suggested the idea of digital"
     ],
     "words": [
       {
@@ -737,7 +757,17 @@
         "start": 40.620000000000005,
         "end": 40.94,
         "probability": 0.9751559
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 40.94,
+    "end": 41.620000000000005,
+    "lines": [
+      "immortality."
+    ],
+    "words": [
       {
         "word": "immortality.",
         "start": 40.94,
@@ -869,9 +899,9 @@
   },
   {
     "start": 50.07,
-    "end": 51.64,
+    "end": 51.370000000000005,
     "lines": [
-      "It is evident that people want to live"
+      "It is evident that people want to"
     ],
     "words": [
       {
@@ -915,23 +945,23 @@
         "start": 51.230000000000004,
         "end": 51.370000000000005,
         "probability": 0.9934659
-      },
-      {
-        "word": "live",
-        "start": 51.370000000000005,
-        "end": 51.64,
-        "probability": 0.99468124
       }
     ],
     "speaker_id": null
   },
   {
-    "start": 51.64,
-    "end": 53.36,
+    "start": 51.370000000000005,
+    "end": 52.85,
     "lines": [
-      "forever, although it has never been considered"
+      "live forever, although it has never"
     ],
     "words": [
+      {
+        "word": "live",
+        "start": 51.370000000000005,
+        "end": 51.64,
+        "probability": 0.99468124
+      },
       {
         "word": "forever,",
         "start": 51.64,
@@ -961,7 +991,17 @@
         "start": 52.650000000000006,
         "end": 52.85,
         "probability": 0.99496776
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 52.85,
+    "end": 54.45,
+    "lines": [
+      "been considered a realistic option."
+    ],
+    "words": [
       {
         "word": "been",
         "start": 52.85,
@@ -973,17 +1013,7 @@
         "start": 53.080000000000005,
         "end": 53.36,
         "probability": 0.9949507
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 53.36,
-    "end": 54.45,
-    "lines": [
-      "a realistic option."
-    ],
-    "words": [
+      },
       {
         "word": "a",
         "start": 53.36,
@@ -1007,9 +1037,9 @@
   },
   {
     "start": 54.77,
-    "end": 57.78,
+    "end": 56.57,
     "lines": [
-      "It has always made this subject a fiction.<|endoftext|>"
+      "It has always made this subject a"
     ],
     "words": [
       {
@@ -1053,23 +1083,23 @@
         "start": 56.26,
         "end": 56.57,
         "probability": 0.7165199
-      },
-      {
-        "word": "fiction.<|endoftext|>",
-        "start": 56.57,
-        "end": 57.78,
-        "probability": 0.9804735
       }
     ],
     "speaker_id": null
   },
   {
-    "start": 57.78,
-    "end": 59.43,
+    "start": 56.57,
+    "end": 58.269999999999996,
     "lines": [
-      "With improve technology, it has become"
+      "fiction.<|endoftext|> With improve"
     ],
     "words": [
+      {
+        "word": "fiction.<|endoftext|>",
+        "start": 56.57,
+        "end": 57.78,
+        "probability": 0.9804735
+      },
       {
         "word": "With",
         "start": 57.78,
@@ -1081,7 +1111,17 @@
         "start": 57.919999999999995,
         "end": 58.269999999999996,
         "probability": 0.28766784
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 58.269999999999996,
+    "end": 59.879999999999995,
+    "lines": [
+      "technology, it has become a more"
+    ],
+    "words": [
       {
         "word": "technology,",
         "start": 58.269999999999996,
@@ -1105,17 +1145,7 @@
         "start": 59.239999999999995,
         "end": 59.43,
         "probability": 0.91645867
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 59.43,
-    "end": 60.37,
-    "lines": [
-      "a more probable."
-    ],
-    "words": [
+      },
       {
         "word": "a",
         "start": 59.43,
@@ -1127,7 +1157,17 @@
         "start": 59.599999999999994,
         "end": 59.879999999999995,
         "probability": 0.8408165
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 59.879999999999995,
+    "end": 60.37,
+    "lines": [
+      "probable."
+    ],
+    "words": [
       {
         "word": "probable.",
         "start": 59.879999999999995,
@@ -1185,9 +1225,9 @@
   },
   {
     "start": 63.47,
-    "end": 65.77,
+    "end": 65.28,
     "lines": [
-      "the recreation of a mice brain on a computer"
+      "the recreation of a mice brain on"
     ],
     "words": [
       {
@@ -1231,7 +1271,17 @@
         "start": 65.09,
         "end": 65.28,
         "probability": 0.9822157
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 65.28,
+    "end": 67.06,
+    "lines": [
+      "a computer in May 2020."
+    ],
+    "words": [
       {
         "word": "a",
         "start": 65.28,
@@ -1243,17 +1293,7 @@
         "start": 65.45,
         "end": 65.77,
         "probability": 0.9967989
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 65.77,
-    "end": 67.06,
-    "lines": [
-      "in May 2020."
-    ],
-    "words": [
+      },
       {
         "word": "in",
         "start": 65.77,
@@ -1277,9 +1317,9 @@
   },
   {
     "start": 67.92,
-    "end": 70.11,
+    "end": 69.75,
     "lines": [
-      "This brain computer can react to images"
+      "This brain computer can react to"
     ],
     "words": [
       {
@@ -1317,23 +1357,23 @@
         "start": 69.42,
         "end": 69.75,
         "probability": 0.9080667
-      },
-      {
-        "word": "images",
-        "start": 69.75,
-        "end": 70.11,
-        "probability": 0.9993631
       }
     ],
     "speaker_id": null
   },
   {
-    "start": 70.11,
-    "end": 72.85000000000001,
+    "start": 69.75,
+    "end": 72.08,
     "lines": [
-      "and is the largest brain recreation on a computer"
+      "images and is the largest brain recreation"
     ],
     "words": [
+      {
+        "word": "images",
+        "start": 69.75,
+        "end": 70.11,
+        "probability": 0.9993631
+      },
       {
         "word": "and",
         "start": 70.11,
@@ -1369,7 +1409,17 @@
         "start": 71.61,
         "end": 72.08,
         "probability": 0.8114095
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 72.08,
+    "end": 73.52000000000001,
+    "lines": [
+      "on a computer to date."
+    ],
+    "words": [
       {
         "word": "on",
         "start": 72.08,
@@ -1387,17 +1437,7 @@
         "start": 72.55000000000001,
         "end": 72.85000000000001,
         "probability": 0.99763006
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 72.85000000000001,
-    "end": 73.52000000000001,
-    "lines": [
-      "to date."
-    ],
-    "words": [
+      },
       {
         "word": "to",
         "start": 72.85000000000001,
@@ -1507,9 +1547,9 @@
   },
   {
     "start": 79.31,
-    "end": 83.89000000000001,
+    "end": 81.31,
     "lines": [
-      "where you fill out a mindful online and upload facts and images about yourself."
+      "where you fill out a mindful online"
     ],
     "words": [
       {
@@ -1553,7 +1593,17 @@
         "start": 80.57000000000001,
         "end": 81.31,
         "probability": 0.5897075
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 81.31,
+    "end": 83.89000000000001,
+    "lines": [
+      "and upload facts and images about yourself."
+    ],
+    "words": [
       {
         "word": "and",
         "start": 81.31,
@@ -1601,9 +1651,9 @@
   },
   {
     "start": 84.78,
-    "end": 86.9,
+    "end": 86.41,
     "lines": [
-      "It collects all your data and stores it."
+      "It collects all your data and stores"
     ],
     "words": [
       {
@@ -1647,7 +1697,17 @@
         "start": 86.16,
         "end": 86.41,
         "probability": 0.5832993
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 86.41,
+    "end": 86.9,
+    "lines": [
+      "it."
+    ],
+    "words": [
       {
         "word": "it.",
         "start": 86.41,
@@ -1659,9 +1719,9 @@
   },
   {
     "start": 87.28,
-    "end": 88.93,
+    "end": 88.7425,
     "lines": [
-      "So when the technology is created, they will"
+      "So when the technology is created,"
     ],
     "words": [
       {
@@ -1693,23 +1753,23 @@
         "start": 88.35000000000001,
         "end": 88.7425,
         "probability": 0.7768581
-      },
-      {
-        "word": "they will",
-        "start": 88.7425,
-        "end": 88.93,
-        "probability": 0.9401444
       }
     ],
     "speaker_id": null
   },
   {
-    "start": 88.93,
-    "end": 91.56,
+    "start": 88.7425,
+    "end": 90.09,
     "lines": [
-      "be able to download this data into a computer,"
+      "they will be able to download this"
     ],
     "words": [
+      {
+        "word": "they will",
+        "start": 88.7425,
+        "end": 88.93,
+        "probability": 0.9401444
+      },
       {
         "word": "be",
         "start": 88.93,
@@ -1739,7 +1799,17 @@
         "start": 89.8,
         "end": 90.09,
         "probability": 0.9762548
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 90.09,
+    "end": 93.01,
+    "lines": [
+      "data into a computer, robot or new human form."
+    ],
+    "words": [
       {
         "word": "data",
         "start": 90.09,
@@ -1763,17 +1833,7 @@
         "start": 91.02000000000001,
         "end": 91.56,
         "probability": 0.97042656
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 91.56,
-    "end": 93.01,
-    "lines": [
-      "robot or new human form."
-    ],
-    "words": [
+      },
       {
         "word": "robot",
         "start": 91.56,
@@ -2041,9 +2101,9 @@
   },
   {
     "start": 105.6,
-    "end": 107.1,
+    "end": 106.9,
     "lines": [
-      "The use of limb replacements have been"
+      "The use of limb replacements have"
     ],
     "words": [
       {
@@ -2081,23 +2141,23 @@
         "start": 106.61,
         "end": 106.9,
         "probability": 0.654429
-      },
-      {
-        "word": "been",
-        "start": 106.9,
-        "end": 107.1,
-        "probability": 0.9918641
       }
     ],
     "speaker_id": null
   },
   {
-    "start": 107.1,
+    "start": 106.9,
     "end": 109.11,
     "lines": [
-      "around since 1,000 BC."
+      "been around since 1,000 BC."
     ],
     "words": [
+      {
+        "word": "been",
+        "start": 106.9,
+        "end": 107.1,
+        "probability": 0.9918641
+      },
       {
         "word": "around",
         "start": 107.1,
@@ -2215,9 +2275,9 @@
   },
   {
     "start": 114.91,
-    "end": 116.75999999999999,
+    "end": 116.47,
     "lines": [
-      "This gives us hope that in the future the"
+      "This gives us hope that in the future"
     ],
     "words": [
       {
@@ -2267,23 +2327,23 @@
         "start": 116.19999999999999,
         "end": 116.47,
         "probability": 0.9993117
-      },
-      {
-        "word": "the",
-        "start": 116.47,
-        "end": 116.75999999999999,
-        "probability": 0.45910746
       }
     ],
     "speaker_id": null
   },
   {
-    "start": 116.75999999999999,
-    "end": 118.94,
+    "start": 116.47,
+    "end": 118.44999999999999,
     "lines": [
-      "technology will improve and we will be"
+      "the technology will improve and we"
     ],
     "words": [
+      {
+        "word": "the",
+        "start": 116.47,
+        "end": 116.75999999999999,
+        "probability": 0.45910746
+      },
       {
         "word": "technology",
         "start": 116.75999999999999,
@@ -2313,7 +2373,17 @@
         "start": 118.11,
         "end": 118.44999999999999,
         "probability": 0.7919256
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 118.44999999999999,
+    "end": 121.00999999999999,
+    "lines": [
+      "will be able to create digital immortality."
+    ],
+    "words": [
       {
         "word": "will",
         "start": 118.44999999999999,
@@ -2325,17 +2395,7 @@
         "start": 118.77,
         "end": 118.94,
         "probability": 0.9844213
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 118.94,
-    "end": 121.00999999999999,
-    "lines": [
-      "able to create digital immortality."
-    ],
-    "words": [
+      },
       {
         "word": "able",
         "start": 118.94,
@@ -2417,9 +2477,9 @@
   },
   {
     "start": 124.85,
-    "end": 127.67,
+    "end": 126.8,
     "lines": [
-      "The star-like species only survive for approximately"
+      "The star-like species only survive"
     ],
     "words": [
       {
@@ -2451,7 +2511,17 @@
         "start": 126.49,
         "end": 126.8,
         "probability": 0.91634506
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 126.8,
+    "end": 128.74,
+    "lines": [
+      "for approximately 1 to 10 million"
+    ],
+    "words": [
       {
         "word": "for",
         "start": 126.8,
@@ -2463,17 +2533,7 @@
         "start": 127.19,
         "end": 127.67,
         "probability": 0.99663347
-      }
-    ],
-    "speaker_id": null
-  },
-  {
-    "start": 127.67,
-    "end": 128.93,
-    "lines": [
-      "1 to 10 million years."
-    ],
-    "words": [
+      },
       {
         "word": "1",
         "start": 127.67,
@@ -2497,7 +2557,17 @@
         "start": 128.46,
         "end": 128.74,
         "probability": 0.89375144
-      },
+      }
+    ],
+    "speaker_id": null
+  },
+  {
+    "start": 128.74,
+    "end": 128.93,
+    "lines": [
+      "years."
+    ],
+    "words": [
       {
         "word": "years.",
         "start": 128.74,

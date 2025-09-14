@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use eyre::eyre;
 use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, NewSegmentFn};
-use crate::formatting::{VadMaskOracle, process_segments, SilenceOracle, ScriptProfile};
+use crate::formatting::{VadMaskOracle, process_segments, SilenceOracle, PostProcessConfig, FormattingOverrides, apply_overrides};
 use crate::types::SubtitleCue;
 
 // callback type aliases are defined in crate::types
@@ -67,7 +67,7 @@ impl Engine {
         &mut self,
         audio_path: &str,
         options: crate::TranscribeOptions,
-        profile_override: Option<ScriptProfile>,
+        formatting_overrides: Option<FormattingOverrides>,
         cb: Option<Callbacks<'_>>,
     ) -> eyre::Result<Vec<SubtitleCue>> {
         let cb = cb.unwrap_or_default();
@@ -167,7 +167,7 @@ impl Engine {
         let from_lang = options.lang.clone().unwrap_or_else(|| "auto".to_string());
         let whisper_to_en = options.whisper_to_english.unwrap_or(false);
 
-        let mut segments = crate::transcribe::run_transcription_pipeline(
+        let (mut segments, detected_lang) = crate::transcribe::run_transcription_pipeline(
             ctx,
             speech_segments,
             options,
@@ -178,21 +178,24 @@ impl Engine {
         )
         .await?;
 
+        // Choose effective language: detected if present, otherwise the user-provided from_lang
+        let effective_lang: &str = detected_lang.as_deref().unwrap_or(&from_lang);
+
         if !whisper_to_en {
             if let Some(to_lang) = translate_to.as_deref() {
-                crate::translate::translate_segments(segments.as_mut_slice(), &from_lang, to_lang, cb.progress)
+                crate::translate::translate_segments(segments.as_mut_slice(), effective_lang, to_lang, cb.progress)
                     .await
                     .map_err(|e| eyre!("{}", e))?;
             }
         }
 
-        // Apply post-process configuration inside formatting. If a profile_override is provided,
-        // formatting will prioritize it over language; otherwise it will infer from `from_lang`.
+        // Build a config from the chosen preset; then apply optional overrides.
+        let mut pp_cfg = PostProcessConfig::for_language(effective_lang);
+        if let Some(ov) = &formatting_overrides { apply_overrides(&mut pp_cfg, ov); }
+
         Ok(process_segments(
             &segments,
-            Some(&from_lang.as_str()),
-            profile_override,
-            None,
+            &pp_cfg,
             vad_mask.as_ref().map(|o| o as &dyn SilenceOracle),
         ))
     }

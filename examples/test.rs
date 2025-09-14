@@ -1,4 +1,4 @@
-use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions, Callbacks, Segment};
+use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions, Callbacks, Segment, FormattingOverrides};
 use eyre::Result;
 
 #[tokio::main]
@@ -25,8 +25,13 @@ async fn main() -> Result<(), eyre::Report> {
         is_cancelled: None,
     };
 
+    let overrides = FormattingOverrides {
+        max_chars_per_line: Some(32),
+        ..Default::default()
+    };
+
     let segments = engine
-        .transcribe_audio(&audio_path, options, None, Some(callbacks))
+        .transcribe_audio(&audio_path, options, Some(overrides), Some(callbacks))
         .await?;
 
     println!("Transcribed {} segments", segments.len());
