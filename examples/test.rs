@@ -1,4 +1,4 @@
-use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions, Callbacks, Segment, process_segments, PostProcessConfig};
+use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions, Callbacks, Segment};
 use eyre::Result;
 
 #[tokio::main]
@@ -26,7 +26,7 @@ async fn main() -> Result<(), eyre::Report> {
     };
 
     let segments = engine
-        .transcribe_audio(&audio_path, options, Some(callbacks))
+        .transcribe_audio(&audio_path, options, None, Some(callbacks))
         .await?;
 
     println!("Transcribed {} segments", segments.len());

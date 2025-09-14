@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use eyre::eyre;
 use crate::types::{SpeechSegment, DiarizeOptions, LabeledProgressFn, NewSegmentFn};
-use crate::formatting::{VadMaskOracle, PostProcessConfig, process_segments, SilenceOracle};
+use crate::formatting::{VadMaskOracle, process_segments, SilenceOracle, ScriptProfile};
 use crate::types::SubtitleCue;
 
 // callback type aliases are defined in crate::types
@@ -67,6 +67,7 @@ impl Engine {
         &mut self,
         audio_path: &str,
         options: crate::TranscribeOptions,
+        profile_override: Option<ScriptProfile>,
         cb: Option<Callbacks<'_>>,
     ) -> eyre::Result<Vec<SubtitleCue>> {
         let cb = cb.unwrap_or_default();
@@ -133,10 +134,10 @@ impl Engine {
 
             // `vad::get_segments` expects a &str path; convert from PathBuf
             let vad_model_path_str = vad_model_path.to_string_lossy().to_string();
-            let (oracle, merged) = crate::vad::get_segments(&vad_model_path_str, &original_samples)
+            let (mask, merged) = crate::vad::get_segments(&vad_model_path_str, &original_samples)
                 .map_err(|e| eyre!("{:?}", e))?;
             speech_segments = merged;
-            vad_mask = Some(oracle);
+            vad_mask = Some(VadMaskOracle::new(mask));
         }
         else {
             speech_segments = vec![SpeechSegment {
@@ -185,9 +186,13 @@ impl Engine {
             }
         }
 
+        // Apply post-process configuration inside formatting. If a profile_override is provided,
+        // formatting will prioritize it over language; otherwise it will infer from `from_lang`.
         Ok(process_segments(
             &segments,
-            &PostProcessConfig::default(),
+            Some(&from_lang.as_str()),
+            profile_override,
+            None,
             vad_mask.as_ref().map(|o| o as &dyn SilenceOracle),
         ))
     }

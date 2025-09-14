@@ -47,6 +47,10 @@ pub struct PostProcessConfig {
     pub max_sub_dur: f64,          // e.g., 6.0
     /// Optional soft cap on words per line (0 disables)
     pub soft_max_words_per_line: usize, // e.g., 10
+    pub insert_interword_space: bool,   // false for CJK
+    pub use_grapheme_len: bool,         // true outside ASCII-only
+    pub enforce_kinsoku: bool,          // true for JA
+    pub allow_comma_split: bool,        // gate comma splitting
 }
 
 impl Default for PostProcessConfig {
@@ -61,7 +65,74 @@ impl Default for PostProcessConfig {
             min_sub_dur: 1.0,
             max_sub_dur: 6.0,
             soft_max_words_per_line: 0,
+            insert_interword_space: true,
+            use_grapheme_len: true,
+            enforce_kinsoku: false,
+            allow_comma_split: true,
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum ScriptProfile { Latin, CJK, SEAsianNoSpace, RTL, Indic }
+
+pub fn apply_profile(cfg: &mut PostProcessConfig, p: ScriptProfile) {
+    match p {
+        ScriptProfile::Latin => {
+            cfg.max_chars_per_line = 38; // previously 36..=40; pick 38
+            cfg.cps_cap = 17.0;
+            cfg.insert_interword_space = true;
+            cfg.use_grapheme_len = true;
+            cfg.enforce_kinsoku = false;
+            cfg.allow_comma_split = true;
+        }
+        ScriptProfile::CJK => {
+            cfg.max_chars_per_line = 20; // previously 16..=22; pick 20
+            cfg.cps_cap = 11.5;
+            cfg.insert_interword_space = false;
+            cfg.use_grapheme_len = true;
+            cfg.enforce_kinsoku = true; // simple blacklist rules
+            cfg.allow_comma_split = true;
+        }
+        ScriptProfile::SEAsianNoSpace => { // Thai, Khmer, Lao, etc.
+            cfg.max_chars_per_line = 22; // previously 18..=26; pick 22
+            cfg.cps_cap = 13.0;
+            cfg.insert_interword_space = true; // tokens likely presegmented
+            cfg.use_grapheme_len = true;
+            cfg.enforce_kinsoku = false;
+            cfg.allow_comma_split = false;     // commas are rarer
+        }
+        ScriptProfile::RTL => { // Arabic, Hebrew
+            cfg.max_chars_per_line = 28; // previously 24..=32; pick 28
+            cfg.cps_cap = 14.0;
+            cfg.insert_interword_space = true;
+            cfg.use_grapheme_len = true;
+            cfg.enforce_kinsoku = false;
+            cfg.allow_comma_split = true;
+        }
+        ScriptProfile::Indic => {
+            cfg.max_chars_per_line = 30; // previously 26..=34; pick 30
+            cfg.cps_cap = 15.0;
+            cfg.insert_interword_space = true;
+            cfg.use_grapheme_len = true; // avoid breaking inside conjuncts
+            cfg.enforce_kinsoku = false;
+            cfg.allow_comma_split = true;
+        }
+    }
+}
+
+pub fn profile_for_lang(lang: &str) -> ScriptProfile {
+    match lang {
+        // CJK
+        "zh" | "zh-CN" | "zh-TW" | "ja" | "ko" => ScriptProfile::CJK,
+        // SE Asian no-space
+        "th" | "lo" | "km" | "my" => ScriptProfile::SEAsianNoSpace,
+        // RTL
+        "ar" | "fa" | "ur" | "he" => ScriptProfile::RTL,
+        // Indic
+        "hi" | "bn" | "ta" | "te" | "ml" | "mr" | "gu" | "pa" | "kn" | "or" | "si" => ScriptProfile::Indic,
+        // default
+        _ => ScriptProfile::Latin,
     }
 }
 
@@ -108,10 +179,28 @@ impl SilenceOracle for VadMaskOracle {
 /// Main entry: post-process whisper segments into readable subtitle cues.
 pub fn process_segments(
     segments: &[Segment],
-    cfg: &PostProcessConfig,
+    lang: Option<&str>,
+    profile: Option<ScriptProfile>,
+    cfg: Option<&PostProcessConfig>,
     oracle: Option<&dyn SilenceOracle>,
 ) -> Vec<SubtitleCue> {
     let oracle = oracle.unwrap_or(&NoSilence);
+
+    // Resolve configuration: use provided cfg as-is, or build default + profile
+    let cfg_local;
+    let cfg: &PostProcessConfig = if let Some(c) = cfg {
+        c
+    } else {
+        cfg_local = {
+            let mut c = PostProcessConfig::default();
+            let prof = profile
+                .or_else(|| lang.map(profile_for_lang))
+                .unwrap_or(ScriptProfile::Latin);
+            apply_profile(&mut c, prof);
+            c
+        };
+        &cfg_local
+    };
 
     // 1) Collect words from all segments, keep speaker_id continuity.
     let mut all: Vec<(Option<String>, WordTimestamp)> = Vec::new();
@@ -197,7 +286,7 @@ fn clamp_and_merge_tiny_words(toks: &mut Vec<Tok>, cfg: &PostProcessConfig, orac
     // First pass: clamp boundaries against neighbors and silence.
     for i in 0..toks.len() {
         // Clamp to min duration
-        let mut dur = toks[i].end - toks[i].start;
+        let dur = toks[i].end - toks[i].start;
         if dur < cfg.min_word_dur {
             let grow = (cfg.min_word_dur - dur) / 2.0;
             toks[i].start -= grow;
@@ -451,7 +540,7 @@ mod tests {
 
         // Build a pseudo segment and run
         let seg = Segment { start: 0.0, end: 1.1, text: String::new(), speaker_id: None, words: Some(words.iter().map(|t| WordTimestamp{word: format!("{}{}", t.word, t.punc), start: t.start, end: t.end, probability: None}).collect()) };
-        let cues = process_segments(&[seg], &cfg, None);
+        let cues = process_segments(&[seg], None, None, Some(&cfg), None);
         assert!(!cues.is_empty());
         // Expect two lines split as "I think" | "I would like to."
         let lines = &cues[0].lines;

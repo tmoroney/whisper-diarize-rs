@@ -2,3 +2,4 @@
 *.wav
 /cache
 .DS_Store
+*.json

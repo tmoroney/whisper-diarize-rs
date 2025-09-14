@@ -1,13 +1,12 @@
 use whisper_rs::{WhisperVadContext, WhisperVadContextParams, WhisperVadParams};
 use crate::types::SpeechSegment;
 use eyre::Result;
-use crate::formatting::VadMaskOracle;
 
 /// Detect speech segments with Silero VAD via whisper-rs. Input `int_samples` must be mono i16 at 16_000 Hz.
 pub fn get_segments(
     vad_model: &str,
     int_samples: &[i16],
-) -> Result<(VadMaskOracle, Vec<SpeechSegment>)> {
+) -> Result<(Vec<(f64, f64)>, Vec<SpeechSegment>)> {
     // Convert entire integer buffer to f32 for VAD processing
     let mut samples = vec![0.0f32; int_samples.len()];
     whisper_rs::convert_integer_to_float_audio(&int_samples, &mut samples)?;
@@ -20,7 +19,7 @@ pub fn get_segments(
 
     // 3) Tune VAD behavior (defaults are reasonable; adjust if needed)
     let mut vadp = WhisperVadParams::new();
-    vadp.set_min_silence_duration(50); // ms
+    vadp.set_min_silence_duration(100); // ms
     // vadp.set_threshold(0.5);
     // vadp.set_min_speech_duration(250);    // ms
     // vadp.set_speech_pad(30);              // ms
@@ -81,6 +80,6 @@ pub fn get_segments(
         .filter(|seg| seg.end > seg.start && !seg.samples.is_empty())
         .collect();
 
-    let oracle = VadMaskOracle::new(mask);
-    Ok((oracle, merged_segments))
+    // Return the raw (unmerged) speech mask for consumers to build their own oracle
+    Ok((mask, merged_segments))
 }
