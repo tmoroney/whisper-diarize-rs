@@ -31,7 +31,6 @@ pub struct TranscribeOptions {
     // If set to "en", this takes precedence over `whisper_to_english` (for explicit control).
     pub translate_target: Option<String>,
 
-    pub word_timestamps: Option<bool>, // Enable word-level timestamps
     pub enable_vad: Option<bool>, // Enable Voice Activity Detection to isolate speech segments
     pub enable_diarize: Option<bool>, // Labels segments with speaker_id
     pub max_speakers: Option<usize>, // Max number of speakers to detect (otherwise auto detection may create too many speakers)
@@ -46,7 +45,6 @@ impl Default for TranscribeOptions {
             lang: Some("auto".to_string()),
             whisper_to_english: Some(false),
             translate_target: None,
-            word_timestamps: Some(true),
             enable_vad: Some(true),
             enable_diarize: None,
             max_speakers: None,

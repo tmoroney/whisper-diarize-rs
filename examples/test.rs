@@ -11,7 +11,7 @@ async fn main() -> Result<(), eyre::Report> {
     options.model = "small".into();
     options.lang = Some("auto".into());
     options.enable_vad = Some(true);
-    options.enable_diarize = Some(true);
+    options.enable_diarize = Some(false);
     //options.translate_target = Some("en".into());
     //options.whisper_to_english = Some(true);
 
@@ -27,7 +27,8 @@ async fn main() -> Result<(), eyre::Report> {
     };
 
     let overrides = FormattingOverrides {
-        //max_chars_per_line: Some(32),
+        max_chars_per_line: Some(20),
+        max_lines: Some(2),
         ..Default::default()
     };
 

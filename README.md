@@ -139,10 +139,10 @@ Via standalone: construct `PostProcessConfig` and tweak fields directly.
 
 ## Output
 
-`process_segments` returns `Vec<SubtitleCue>` with:
+`process_segments` returns `Vec<Segment>` with:
 
 - `start`, `end`: seconds
-- `lines`: up to `max_lines` strings ready for rendering
+- `text`: up to `max_lines` lines of text broken up by line break
 - `words`: per-word text and timestamps inside the cue
 - `speaker_id`: if diarization or external speaker info was provided
 

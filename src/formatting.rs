@@ -27,6 +27,9 @@ struct Tok {
     pub speaker: Option<String>,
 }
 
+#[inline]
+fn round3(x: f64) -> f64 { (x * 1000.0).round() / 1000.0 }
+
 /// Optional overrides that can be applied on top of a language/profile preset.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FormattingOverrides {
@@ -431,10 +434,15 @@ fn build_cue(group: &[Tok], start_idx: usize, cfg: &PostProcessConfig) -> (usize
 
     let words: Vec<WordTimestamp> = w_slice
         .iter()
-        .map(|t| WordTimestamp { text: render_token(t), start: t.start, end: t.end, probability: t.prob })
+        .map(|t| WordTimestamp {
+            text: render_token(t),
+            start: round3(t.start),
+            end: round3(t.end),
+            probability: t.prob,
+        })
         .collect();
 
-    let cue = Segment { start: t0.max(0.0), end: t1, text, words: Some(words), speaker_id: speaker };
+    let cue = Segment { start: round3(t0.max(0.0)), end: round3(t1), text, words: Some(words), speaker_id: speaker };
     (j, cue)
 }
 

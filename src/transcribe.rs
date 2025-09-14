@@ -165,6 +165,43 @@ pub fn create_context(
     }
 }
 
+/// When Whisper is translating (e.g., to English), token-level timings no longer
+/// align with the translated words. This helper generates approximate per-word
+/// timestamps by interpolating across [start, end] proportional to word lengths.
+fn interpolate_word_timestamps(line: &str, start: f64, end: f64) -> Vec<WordTimestamp> {
+    let dur = (end - start).max(0.0);
+    if dur <= 0.0 { return Vec::new(); }
+
+    // Split on whitespace; keep non-empty tokens
+    let tokens: Vec<&str> = line
+        .split_whitespace()
+        .filter(|t| !t.trim_matches('\0').trim().is_empty())
+        .collect();
+    if tokens.is_empty() { return Vec::new(); }
+
+    // Weight by alphanumeric length (fallback to 1 if zero) so punctuation consumes little time
+    let weights: Vec<usize> = tokens
+        .iter()
+        .map(|t| t.chars().filter(|c| c.is_alphanumeric()).count().max(1))
+        .collect();
+    let total_w: usize = weights.iter().sum();
+    if total_w == 0 { return Vec::new(); }
+
+    let mut out: Vec<WordTimestamp> = Vec::with_capacity(tokens.len());
+    let mut acc = 0usize;
+    for (i, tok) in tokens.iter().enumerate() {
+        let t0 = start + (acc as f64 / total_w as f64) * dur;
+        let t1 = if i + 1 == tokens.len() {
+            end
+        } else {
+            start + ((acc + weights[i]) as f64 / total_w as f64) * dur
+        };
+        acc += weights[i];
+        out.push(WordTimestamp { text: (*tok).to_string(), start: t0, end: t1, probability: None });
+    }
+    out
+}
+
 // Returns true if `s` is *only* a control marker like "[_BEG_]" or "[_TT_320]".
 fn is_whole_control_token(s: &str) -> bool {
     let t = s.trim_matches('\0').trim();
@@ -416,32 +453,25 @@ pub async fn run_transcription_pipeline(
                 );
             }
         
-            let mut word_timestamps: Vec<WordTimestamp> = Vec::new();
-            if let Some(true) = options.word_timestamps {
-                word_timestamps = get_word_timestamps(&seg);
-            }
-
-            // if word timestamps are empty, fall back to segment bounds
-            let (seg_start, seg_end, words_opt) = if word_timestamps.is_empty() {
-                tracing::debug!(
-                    "Seg word_timestamps empty; falling back to segment bounds [{:.2}-{:.2}]",
-                    approx_start, approx_end
-                );
-                (approx_start, approx_end, None)
+            // Choose word timestamps strategy and apply offset where needed in one place
+            let translated = options.whisper_to_english.unwrap_or(false);
+            let word_timestamps: Vec<WordTimestamp> = if translated {
+                // Interpolated times are already absolute via approx_* (which include base_offset)
+                interpolate_word_timestamps(&text, approx_start, approx_end)
             } else {
-                // Offset word timestamps to absolute timeline
-                for w in &mut word_timestamps {
-                    w.start += base_offset;
-                    w.end += base_offset;
-                }
-                let s = word_timestamps.first().map(|w| w.start).unwrap_or(approx_start);
-                let e = word_timestamps.last().map(|w| w.end).unwrap_or(s);
-                tracing::debug!(
-                    "Seg word_timestamps count={} bounds [{:.2}-{:.2}]",
-                    word_timestamps.len(), s, e
-                );
-                (s, e, Some(word_timestamps))
+                let mut w = get_word_timestamps(&seg);
+                for t in &mut w { t.start += base_offset; t.end += base_offset; } // Offset all word timestamps by base_offset
+                w
             };
+
+            // Derive segment bounds with sensible fallbacks, and include words if any
+            let seg_start = word_timestamps.first().map(|w| w.start).unwrap_or(approx_start);
+            let seg_end = word_timestamps.last().map(|w| w.end).unwrap_or(approx_end);
+            tracing::debug!(
+                "Seg word_timestamps count={} bounds [{:.2}-{:.2}]",
+                word_timestamps.len(), seg_start, seg_end
+            );
+            let words_opt = (!word_timestamps.is_empty()).then_some(word_timestamps);
         
             // prevent slight overlaps with previous segment
             if let Some(last) = segments.last_mut() {
