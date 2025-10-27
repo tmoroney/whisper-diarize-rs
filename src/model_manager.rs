@@ -364,6 +364,57 @@ impl ModelManager {
         Ok(())
     }
 
+    /// List all cached Whisper models in the cache directory.
+    /// Returns a vector of model names (e.g., "tiny", "base", "small").
+    pub fn list_cached_models(&self) -> Result<Vec<String>> {
+        let cache_dir = self.model_cache_dir()?;
+        if !cache_dir.exists() { return Ok(vec![]); }
+
+        // Only look in the Whisper repository directory
+        let whisper_repo_dir = cache_dir.join("models--ggerganov--whisper.cpp").join("snapshots");
+        if !whisper_repo_dir.exists() { return Ok(vec![]); }
+
+        let mut models = std::collections::HashSet::new();
+
+        // Iterate through snapshot directories
+        for snapshot_entry in fs::read_dir(&whisper_repo_dir).context("Failed to read snapshots dir")? {
+            let snapshot_entry = snapshot_entry?;
+            let snapshot_path = snapshot_entry.path();
+            if !snapshot_path.is_dir() { continue; }
+
+            // Look for ggml-{model}.bin files in this snapshot
+            for file_entry in fs::read_dir(&snapshot_path).context("Failed to read snapshot dir")? {
+                let file_entry = file_entry?;
+                let path = file_entry.path();
+                if path.is_file() {
+                    if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
+                        if name.starts_with("ggml-") && name.ends_with(".bin") {
+                            // Extract model name from "ggml-{model}.bin"
+                            let model_part = name.strip_prefix("ggml-").unwrap_or("");
+                            let model_name = model_part.strip_suffix(".bin").unwrap_or("");
+                            if !model_name.is_empty() {
+                                models.insert(model_name.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        let mut result: Vec<String> = models.into_iter().collect();
+        result.sort(); // Sort for consistent ordering
+        Ok(result)
+    }
+
+    /// Delete a cached Whisper model by name.
+    /// Returns true if successfully deleted, false if model doesn't exist or deletion failed.
+    pub fn delete_cached_model(&self, model_name: &str) -> bool {
+        match self.delete_whisper_model(model_name) {
+            Ok(()) => true,
+            Err(_) => false,
+        }
+    }
+
     /// Downloads a model file from HuggingFace Hub with caching and progress support over a custom range.
     async fn ensure_hub_model(
         &self,

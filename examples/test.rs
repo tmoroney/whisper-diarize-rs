@@ -15,7 +15,7 @@ async fn main() -> Result<(), eyre::Report> {
     //options.translate_target = Some("en".into());
     //options.whisper_to_english = Some(true);
 
-    // TODO: add note in transcript to show that it's been translated (word timestamps are not accurate)
+    // TODO: add note in transcript to show that it's been translated (word timestamps are not accurate when translated)
 
     // Unified progress callback: receives percent and a label
     fn on_new_segment(segment: &Segment) { println!("new segment: {}", segment.text); }
