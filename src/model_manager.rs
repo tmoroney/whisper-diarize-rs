@@ -151,8 +151,6 @@ impl ModelManager {
         progress: Option<&LabeledProgressFn>,
         is_cancelled: Option<&(dyn Fn() -> bool + Send + Sync)>,
     ) -> Result<PathBuf> {
-        eprintln!("ensure_whisper_model called for model: {}", model);
-        
         // Early cancellation
         if let Some(is_cancelled) = is_cancelled {
             if is_cancelled() {
@@ -162,7 +160,6 @@ impl ModelManager {
         }
 
         let filename = format!("ggml-{}.bin", model);
-        eprintln!("Looking for filename: {}", filename);
 
         // On macOS with CoreML feature, main model is 0-70%; otherwise 0-100%
         #[cfg(feature = "coreml")]
@@ -471,7 +468,6 @@ impl ModelManager {
         
         // Cancel and cleanup previous download if it exists
         if let Some(old_token) = active.take() {
-            eprintln!("Cancelling previous download and cleaning up partial files");
             old_token.cancel();
             self.cleanup_stale_locks().ok();
         }
@@ -557,8 +553,15 @@ impl ModelManager {
             cancel_token.clone(),
         );
 
-        let path = repo
-            .download_with_progress(filename, prog)
+        let download_result = repo.download_with_progress(filename, prog);
+        
+        // Check if this download was cancelled while it was running
+        if cancel_token.is_cancelled() {
+            bail!("Download cancelled");
+        }
+        
+        // Only propagate error if download wasn't cancelled
+        let path = download_result
             .with_context(|| format!("Failed to download '{}' from '{}'", filename, repo_id))?;
 
         // Validate the downloaded/cached file; if invalid, remove and retry once
