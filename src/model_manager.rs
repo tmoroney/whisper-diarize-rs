@@ -56,7 +56,19 @@ impl<'a> DownloadProgress<'a> {
     }
 
     fn emit(&self) {
-        // Check if this download was cancelled via token
+        // Check if user cancelled via the is_cancelled callback
+        if let Some(is_cancelled) = self.is_cancelled {
+            if is_cancelled() {
+                // User cancelled - cancel this download's token and cleanup
+                self.cancel_token.cancel();
+                if let Some(ref f) = self.on_cancel_cleanup {
+                    f();
+                }
+                return;
+            }
+        }
+        
+        // Check if this download was cancelled via token (from a newer download starting)
         if self.cancel_token.is_cancelled() {
             return;
         }
@@ -458,10 +470,12 @@ impl ModelManager {
         let cancel_token = {
             let mut active = ACTIVE_DOWNLOAD.lock().unwrap();
             
-            // Cancel the previous download if it exists
+            // Cancel the previous download if it exists and clean up its partial files
             if let Some(old_token) = active.take() {
-                eprintln!("Cancelling previous download");
+                eprintln!("Cancelling previous download and cleaning up partial files");
                 old_token.cancel();
+                // Clean up partial downloads from the cancelled download
+                self.cleanup_stale_locks().ok();
             }
             
             // Create new token for this download
@@ -482,7 +496,7 @@ impl ModelManager {
             }
         }
 
-        // Clean up any stale locks first
+        // Clean up any stale locks and partial files before starting
         self.cleanup_stale_locks().ok();
 
         let cache_dir = self.model_cache_dir()?;
