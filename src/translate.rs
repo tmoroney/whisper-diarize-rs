@@ -1,6 +1,6 @@
 use reqwest;
 use serde_json::Value;
-use crate::types::{Segment, WordTimestamp, LabeledProgressFn};
+use crate::types::{Segment, WordTimestamp, LabeledProgressFn, ProgressType};
 use futures::stream::{self, StreamExt};
 use tokio::time::{sleep, Duration};
 
@@ -118,7 +118,7 @@ pub async fn translate_segments(
     let start_label = format!("Translating from {} to {}", from, to);
     // Report start at 0%
     if total > 0 {
-        if let Some(p) = progress { p(0, &start_label); }
+        if let Some(p) = progress { p(0, ProgressType::Translate, &start_label); }
     }
 
     // Translate concurrently with bounded concurrency; keep track of original order via enumerate index
@@ -140,7 +140,7 @@ pub async fn translate_segments(
         completed += 1;
         // Incremental progress
         let percent = ((completed as f64) / (total as f64) * 100.0).round() as i32;
-        if let Some(p) = progress { p(percent.min(99), &format!("{}", start_label)); }
+        if let Some(p) = progress { p(percent.min(99), ProgressType::Translate, &format!("{}", start_label)); }
     }
 
     // Apply results back to segments
@@ -155,7 +155,7 @@ pub async fn translate_segments(
 
     // Completion progress
     if total > 0 {
-        if let Some(p) = progress { p(100, "Translating complete"); }
+        if let Some(p) = progress { p(100, ProgressType::Translate, "Translating complete"); }
     }
 
     Ok(())

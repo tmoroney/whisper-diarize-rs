@@ -1,4 +1,4 @@
-use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions, Callbacks, Segment, FormattingOverrides};
+use whisper_diarize_rs::{Engine, EngineConfig, TranscribeOptions, Callbacks, Segment, FormattingOverrides, ProgressType};
 use eyre::Result;
 
 #[tokio::main]
@@ -17,9 +17,16 @@ async fn main() -> Result<(), eyre::Report> {
 
     // TODO: add note in transcript to show that it's been translated (word timestamps are not accurate when translated)
 
-    // Unified progress callback: receives percent and a label
+    // Unified progress callback: receives percent, progress type and a label
     fn on_new_segment(segment: &Segment) { println!("new segment: {}", segment.text); }
-    fn on_progress(p: i32, label: &str) { println!("{}: {}%", label, p); }
+    fn on_progress(p: i32, progress_type: ProgressType, label: &str) { 
+        match progress_type {
+            ProgressType::Download => print!("📥 "),
+            ProgressType::Transcribe => print!("🎵 "),
+            ProgressType::Translate => print!("🌍 "),
+        }
+        println!("{}: {}%", label, p); 
+    }
     let callbacks = Callbacks {
         progress: Some(&on_progress),
         new_segment_callback: Some(&on_new_segment),

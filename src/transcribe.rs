@@ -1,4 +1,4 @@
-use crate::types::{SpeechSegment, Segment, WordTimestamp, TranscribeOptions, DiarizeOptions, LabeledProgressFn, NewSegmentFn};
+use crate::types::{SpeechSegment, Segment, WordTimestamp, TranscribeOptions, DiarizeOptions, LabeledProgressFn, NewSegmentFn, ProgressType};
 use eyre::{Result, bail, WrapErr, OptionExt};
 use std::path::Path;
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters, WhisperSegment, DtwParameters, DtwMode, DtwModelPreset};
@@ -518,7 +518,7 @@ pub async fn run_transcription_pipeline(
             if let Some(progress_callback) = progress_callback {
                 tracing::trace!("progress: {} * {} / 100", i, speech_segments.len());
                 let progress = ((i + 1) as f64 / speech_segments.len() as f64 * 100.0) as i32;
-                progress_callback(progress, "Transcribing audio");
+                progress_callback(progress, ProgressType::Transcribe, "Transcribing audio");
             }
             segments.push(segment);
         }

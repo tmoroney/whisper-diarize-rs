@@ -1,8 +1,15 @@
 use serde::{Deserialize, Serialize};
 
+// Progress types for the labeled progress callback
+#[derive(Clone, Debug, PartialEq)]
+pub enum ProgressType {
+    Download,
+    Transcribe,
+    Translate,
+}
+
 // Shared callback types
-pub type ProgressFn = dyn Fn(i32) + Send + Sync;                 // general integer progress
-pub type LabeledProgressFn = dyn Fn(i32, &str) + Send + Sync;     // download progress with label
+pub type LabeledProgressFn = dyn Fn(i32, ProgressType, &str) + Send + Sync;     // progress with type and label
 pub type NewSegmentFn = dyn Fn(&Segment) + Send + Sync;           // new segment notifications
 
 #[derive(Clone, Debug, Default)]
