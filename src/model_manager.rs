@@ -26,9 +26,9 @@ struct DownloadProgress<'a> {
     progress_cb: Option<&'a LabeledProgressFn>,
     label: &'a str,
     is_cancelled: Option<&'a (dyn Fn() -> bool + Send + Sync)>,
-    on_cancel_cleanup: Option<Box<dyn Fn() + Send + Sync + 'a>>, // e.g., cleanup stale locks
-    generation: u64, // Generation ID to prevent stale callbacks from emitting
-    cancel_token: Arc<CancellationToken>, // Token to check if this download was cancelled
+    on_cancel_cleanup: Option<Box<dyn Fn() + Send + Sync + 'a>>,
+    generation: u64,
+    cancel_token: Arc<CancellationToken>,
 }
 
 impl<'a> DownloadProgress<'a> {
@@ -55,26 +55,30 @@ impl<'a> DownloadProgress<'a> {
         }
     }
 
-    fn emit(&self) {
-        // Check if user cancelled via the is_cancelled callback
+    /// Check if this download should stop (cancelled by user or superseded by new download)
+    fn should_stop(&self) -> bool {
+        // User cancelled
         if let Some(is_cancelled) = self.is_cancelled {
             if is_cancelled() {
-                // User cancelled - cancel this download's token and cleanup
-                self.cancel_token.cancel();
-                if let Some(ref f) = self.on_cancel_cleanup {
-                    f();
-                }
-                return;
+                return true;
             }
         }
         
-        // Check if this download was cancelled via token (from a newer download starting)
+        // Cancelled by newer download
         if self.cancel_token.is_cancelled() {
-            return;
+            return true;
         }
         
-        // Only emit if this callback is from the current generation
+        // Superseded by newer generation
         if self.generation != DOWNLOAD_GENERATION.load(Ordering::Relaxed) {
+            return true;
+        }
+        
+        false
+    }
+
+    fn emit(&self) {
+        if self.should_stop() {
             return;
         }
         
@@ -87,6 +91,14 @@ impl<'a> DownloadProgress<'a> {
             cb(pct as i32, ProgressType::Download, self.label);
         }
     }
+    
+    /// Handle cancellation: cancel token and run cleanup
+    fn handle_cancellation(&self) {
+        self.cancel_token.cancel();
+        if let Some(ref f) = self.on_cancel_cleanup {
+            f();
+        }
+    }
 }
 
 impl<'a> HubProgress for DownloadProgress<'a> {
@@ -97,12 +109,10 @@ impl<'a> HubProgress for DownloadProgress<'a> {
     }
 
     fn update(&mut self, size: usize) {
+        // Check if user cancelled and handle cleanup
         if let Some(is_cancelled) = self.is_cancelled {
             if is_cancelled() {
-                if let Some(ref f) = self.on_cancel_cleanup {
-                    f();
-                }
-                // Do not emit further progress
+                self.handle_cancellation();
                 return;
             }
         }
@@ -455,7 +465,29 @@ impl ModelManager {
         }
     }
 
-    /// Downloads a model file from HuggingFace Hub with caching and progress support over a custom range.
+    /// Setup for a new download: cancel previous download and create new token
+    fn setup_new_download(&self) -> Result<Arc<CancellationToken>> {
+        let mut active = ACTIVE_DOWNLOAD.lock().unwrap();
+        
+        // Cancel and cleanup previous download if it exists
+        if let Some(old_token) = active.take() {
+            eprintln!("Cancelling previous download and cleaning up partial files");
+            old_token.cancel();
+            self.cleanup_stale_locks().ok();
+        }
+        
+        // Create new token for this download
+        let new_token = Arc::new(CancellationToken::new());
+        *active = Some(new_token.clone());
+        Ok(new_token)
+    }
+
+    /// Downloads a model file from HuggingFace Hub with caching and progress support.
+    /// 
+    /// This function ensures only one download runs at a time by:
+    /// 1. Cancelling any previous download
+    /// 2. Cleaning up partial files from cancelled downloads
+    /// 3. Creating a new cancellation token for this download
     async fn ensure_hub_model(
         &self,
         repo_id: &str,
@@ -466,23 +498,8 @@ impl ModelManager {
         scale: f32,
         label: &str,
     ) -> Result<PathBuf> {
-        // Cancel any existing download and create a new cancellation token for this download
-        let cancel_token = {
-            let mut active = ACTIVE_DOWNLOAD.lock().unwrap();
-            
-            // Cancel the previous download if it exists and clean up its partial files
-            if let Some(old_token) = active.take() {
-                eprintln!("Cancelling previous download and cleaning up partial files");
-                old_token.cancel();
-                // Clean up partial downloads from the cancelled download
-                self.cleanup_stale_locks().ok();
-            }
-            
-            // Create new token for this download
-            let new_token = Arc::new(CancellationToken::new());
-            *active = Some(new_token.clone());
-            new_token
-        };
+        // Setup: Cancel old download, create new token, cleanup partial files
+        let cancel_token = self.setup_new_download()?;
         
         // Increment generation counter to invalidate any stale callbacks
         DOWNLOAD_GENERATION.fetch_add(1, Ordering::Relaxed);
