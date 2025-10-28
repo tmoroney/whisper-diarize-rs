@@ -5,6 +5,16 @@ use hf_hub::api::Progress as HubProgress;
 use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
+use tokio_util::sync::CancellationToken;
+use once_cell::sync::Lazy;
+
+// Global download state to ensure only one download runs at a time
+static ACTIVE_DOWNLOAD: Lazy<Mutex<Option<Arc<CancellationToken>>>> = Lazy::new(|| Mutex::new(None));
+
+// Generation counter to invalidate old progress callbacks
+static DOWNLOAD_GENERATION: AtomicU64 = AtomicU64::new(0);
 
 // Internal progress adapter for hf-hub that forwards percentage to an optional callback
 struct DownloadProgress<'a> {
@@ -17,6 +27,8 @@ struct DownloadProgress<'a> {
     label: &'a str,
     is_cancelled: Option<&'a (dyn Fn() -> bool + Send + Sync)>,
     on_cancel_cleanup: Option<Box<dyn Fn() + Send + Sync + 'a>>, // e.g., cleanup stale locks
+    generation: u64, // Generation ID to prevent stale callbacks from emitting
+    cancel_token: Arc<CancellationToken>, // Token to check if this download was cancelled
 }
 
 impl<'a> DownloadProgress<'a> {
@@ -27,6 +39,7 @@ impl<'a> DownloadProgress<'a> {
         scale: f32,
         on_cancel_cleanup: Option<Box<dyn Fn() + Send + Sync + 'a>>,
         label: &'a str,
+        cancel_token: Arc<CancellationToken>,
     ) -> Self {
         Self {
             offset,
@@ -37,10 +50,22 @@ impl<'a> DownloadProgress<'a> {
             is_cancelled,
             on_cancel_cleanup,
             label,
+            generation: DOWNLOAD_GENERATION.load(Ordering::Relaxed),
+            cancel_token,
         }
     }
 
     fn emit(&self) {
+        // Check if this download was cancelled via token
+        if self.cancel_token.is_cancelled() {
+            return;
+        }
+        
+        // Only emit if this callback is from the current generation
+        if self.generation != DOWNLOAD_GENERATION.load(Ordering::Relaxed) {
+            return;
+        }
+        
         if let (Some(cb), total) = (self.progress_cb, self.total) {
             let pct = if total == 0 {
                 self.offset
@@ -104,6 +129,8 @@ impl ModelManager {
         progress: Option<&LabeledProgressFn>,
         is_cancelled: Option<&(dyn Fn() -> bool + Send + Sync)>,
     ) -> Result<PathBuf> {
+        eprintln!("ensure_whisper_model called for model: {}", model);
+        
         // Early cancellation
         if let Some(is_cancelled) = is_cancelled {
             if is_cancelled() {
@@ -113,6 +140,7 @@ impl ModelManager {
         }
 
         let filename = format!("ggml-{}.bin", model);
+        eprintln!("Looking for filename: {}", filename);
 
         // On macOS with CoreML feature, main model is 0-70%; otherwise 0-100%
         #[cfg(feature = "coreml")]
@@ -426,10 +454,30 @@ impl ModelManager {
         scale: f32,
         label: &str,
     ) -> Result<PathBuf> {
+        // Cancel any existing download and create a new cancellation token for this download
+        let cancel_token = {
+            let mut active = ACTIVE_DOWNLOAD.lock().unwrap();
+            
+            // Cancel the previous download if it exists
+            if let Some(old_token) = active.take() {
+                eprintln!("Cancelling previous download");
+                old_token.cancel();
+            }
+            
+            // Create new token for this download
+            let new_token = Arc::new(CancellationToken::new());
+            *active = Some(new_token.clone());
+            new_token
+        };
+        
+        // Increment generation counter to invalidate any stale callbacks
+        DOWNLOAD_GENERATION.fetch_add(1, Ordering::Relaxed);
+        
         // Early cancellation
         if let Some(is_cancelled) = is_cancelled {
             if is_cancelled() {
                 self.cleanup_stale_locks().ok();
+                cancel_token.cancel();
                 bail!("Download cancelled");
             }
         }
@@ -446,6 +494,14 @@ impl ModelManager {
                 // Do NOT emit progress here; caller requested to only start progress
                 // reporting if a download actually occurs.
                 return Ok(cached);
+            }
+        }
+
+        // Check cancellation again before starting download
+        if let Some(is_cancelled) = is_cancelled {
+            if is_cancelled() {
+                self.cleanup_stale_locks().ok();
+                bail!("Download cancelled before starting");
             }
         }
 
@@ -467,6 +523,7 @@ impl ModelManager {
                 move || { this.cleanup_stale_locks().ok(); }
             })),
             label,
+            cancel_token.clone(),
         );
 
         let path = repo
@@ -482,7 +539,7 @@ impl ModelManager {
             let _ = remove_snapshot_file_and_blob(&path);
             self.cleanup_stale_locks().ok();
 
-            let prog2 = DownloadProgress::new(progress, is_cancelled, offset, scale, None, label);
+            let prog2 = DownloadProgress::new(progress, is_cancelled, offset, scale, None, label, cancel_token.clone());
             let path2 = repo
                 .download_with_progress(filename, prog2)
                 .with_context(|| format!("Failed to re-download '{}' from '{}'", filename, repo_id))?;
