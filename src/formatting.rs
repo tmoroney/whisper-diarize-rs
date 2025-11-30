@@ -316,7 +316,7 @@ pub fn process_segments(
 
 #[inline]
 fn is_ascii_word(s: &str) -> bool {
-    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphabetic())
+    !s.is_empty() && s.chars().all(|c| c.is_ascii_alphabetic() || c == '\'')
 }
 
 /// Merge tokens where the right token is a continuation piece (no leading space)

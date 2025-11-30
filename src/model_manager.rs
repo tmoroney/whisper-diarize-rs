@@ -372,8 +372,13 @@ impl ModelManager {
                 }
                 if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
                     if patterns.iter().any(|p| p == name) {
-                        let _ = remove_snapshot_file_and_blob(&path);
-                        deleted_any = true;
+                        // Only remove the symlink, not the blob file
+                        // This allows the blob to be reused if the model is downloaded again
+                        if path.exists() {
+                            let _ = fs::remove_file(&path);
+                            deleted_any = true;
+                            eprintln!("Removed model symlink: {}", path.display());
+                        }
                     }
                 }
             }
@@ -382,6 +387,68 @@ impl ModelManager {
         if !deleted_any {
             bail!("No files found for model '{}'", model);
         }
+        Ok(())
+    }
+
+    /// Clean up orphaned blob files that are no longer referenced by any symlinks
+    /// This should be called periodically to free up disk space
+    pub fn cleanup_orphaned_blobs(&self) -> Result<()> {
+        let cache_root = self.model_cache_dir()?;
+        let models_dir = cache_root.join("models--ggerganov--whisper.cpp");
+        if !models_dir.exists() { return Ok(()); }
+
+        let blobs_dir = models_dir.join("blobs");
+        let snapshots_dir = models_dir.join("snapshots");
+        if !blobs_dir.exists() || !snapshots_dir.exists() { return Ok(()); }
+
+        // Collect all blob files
+        let mut blob_files: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for entry in fs::read_dir(&blobs_dir).context("Failed to read blobs dir")? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() {
+                if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
+                    blob_files.insert(name.to_string());
+                }
+            }
+        }
+
+        // Collect all referenced blobs from symlinks
+        let mut referenced_blobs: std::collections::HashSet<String> = std::collections::HashSet::new();
+        for entry in fs::read_dir(&snapshots_dir).context("Failed to read snapshots dir")? {
+            let entry = entry?;
+            let snap_path = entry.path();
+            if snap_path.is_dir() {
+                for snap_entry in fs::read_dir(&snap_path).context("Failed to read snapshot dir")? {
+                    let snap_entry = snap_entry?;
+                    let symlink_path = snap_entry.path();
+                    if symlink_path.is_symlink() {
+                        if let Ok(target) = fs::read_link(&symlink_path) {
+                            if let Some(blob_name) = target.file_name().and_then(|s| s.to_str()) {
+                                referenced_blobs.insert(blob_name.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Remove orphaned blobs
+        let mut cleaned_count = 0;
+        for blob_name in blob_files {
+            if !referenced_blobs.contains(&blob_name) {
+                let blob_path = blobs_dir.join(&blob_name);
+                if fs::remove_file(&blob_path).is_ok() {
+                    cleaned_count += 1;
+                    eprintln!("Removed orphaned blob: {}", blob_name);
+                }
+            }
+        }
+
+        if cleaned_count > 0 {
+            eprintln!("Cleaned up {} orphaned blob files", cleaned_count);
+        }
+
         Ok(())
     }
 
@@ -590,6 +657,7 @@ impl ModelManager {
 
     // Attempt to locate a cached file in the hf-hub cache layout without performing any network requests.
     // Cache layout: <cache_root>/models--{owner}--{repo}/snapshots/<rev>/{filename}
+    // If a symlink is missing but the blob exists, recreate the symlink.
     fn find_cached_file(&self, repo_id: &str, filename: &str) -> Result<Option<PathBuf>> {
         let cache_root = self.model_cache_dir()?;
         let mut parts = repo_id.splitn(2, '/');
@@ -600,6 +668,8 @@ impl ModelManager {
         }
         let base = cache_root.join(format!("models--{}--{}", owner, repo)).join("snapshots");
         if !base.exists() { return Ok(None); }
+        
+        // First pass: check if symlink already exists
         for entry in fs::read_dir(&base).context("Failed to read snapshots dir")? {
             let entry = entry?;
             let snap = entry.path();
@@ -609,6 +679,60 @@ impl ModelManager {
                 return Ok(Some(candidate));
             }
         }
+        
+        // Second pass: if symlink missing, try to find orphaned blob and recreate symlink
+        let blobs_dir = cache_root.join(format!("models--{}--{}", owner, repo)).join("blobs");
+        if !blobs_dir.exists() { return Ok(None); }
+        
+        // Find a valid blob by checking file size (models are typically > 1MB)
+        let mut valid_blob: Option<PathBuf> = None;
+        if let Ok(blob_entries) = fs::read_dir(&blobs_dir) {
+            for blob_entry in blob_entries.flatten() {
+                let blob_path = blob_entry.path();
+                if blob_path.is_file() {
+                    if let Ok(metadata) = fs::metadata(&blob_path) {
+                        // Skip small files (likely not model files)
+                        if metadata.len() > 1_000_000 {
+                            // Quick validation: try to read first few bytes
+                            if fs::File::open(&blob_path).is_ok() {
+                                valid_blob = Some(blob_path);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // If we found a valid blob, create symlink in the first snapshot directory
+        if let Some(blob_path) = valid_blob {
+            if let Ok(mut snapshot_entries) = fs::read_dir(&base) {
+                if let Some(Ok(snap_entry)) = snapshot_entries.next() {
+                    let snap = snap_entry.path();
+                    if snap.is_dir() {
+                        let symlink_path = snap.join(filename);
+                        let relative_blob = PathBuf::from("../../blobs").join(blob_path.file_name().unwrap());
+                        
+                        #[cfg(unix)]
+                        {
+                            if std::os::unix::fs::symlink(&relative_blob, &symlink_path).is_ok() {
+                                eprintln!("Recreated missing symlink: {} -> {}", symlink_path.display(), relative_blob.display());
+                                return Ok(Some(symlink_path));
+                            }
+                        }
+                        
+                        #[cfg(windows)]
+                        {
+                            if std::os::windows::fs::symlink_file(&relative_blob, &symlink_path).is_ok() {
+                                eprintln!("Recreated missing symlink: {} -> {}", symlink_path.display(), relative_blob.display());
+                                return Ok(Some(symlink_path));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
         Ok(None)
     }
 }
