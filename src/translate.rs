@@ -163,12 +163,13 @@ pub async fn translate_segments(
 
 /// Regenerate `words` for a segment by splitting text on whitespace
 /// and interpolating timestamps uniformly between segment.start and segment.end.
+/// Words after the first are prefixed with a space so that the formatting layer
+/// can reconstruct the original spacing when rendering.
 fn regenerate_words_uniform(seg: &mut Segment) {
     // Split on Unicode whitespace; filter out empty tokens
-    let tokens: Vec<String> = seg
+    let tokens: Vec<&str> = seg
         .text
         .split_whitespace()
-        .map(|s| s.to_string())
         .filter(|s| !s.is_empty())
         .collect();
 
@@ -183,11 +184,14 @@ fn regenerate_words_uniform(seg: &mut Segment) {
     let dur = end - start;
 
     // Assign bounds so that words tile the interval [start, end].
+    // Prefix words after the first with a space so the formatting layer
+    // knows to insert inter-word spacing.
     let mut words = Vec::with_capacity(n);
     for (i, w) in tokens.into_iter().enumerate() {
         let t0 = start + dur * (i as f64) / (n as f64);
         let t1 = start + dur * ((i + 1) as f64) / (n as f64);
-        words.push(WordTimestamp { text: w, start: t0, end: t1, probability: None });
+        let text = if i == 0 { w.to_string() } else { format!(" {}", w) };
+        words.push(WordTimestamp { text, start: t0, end: t1, probability: None });
     }
 
     seg.words = Some(words);
