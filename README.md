@@ -15,7 +15,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-whisper-diarize-rs = { git = "https://github.com/your-org/whisper-diarize-rs" }
+whisper-diarize-rs = { git = "https://github.com/tmoroney/whisper-diarize-rs" }
 ```
 
 Make sure you meet `whisper-rs` and `pyannote-rs` platform requirements.
@@ -39,7 +39,7 @@ async fn main() -> eyre::Result<()> {
     options.enable_vad = Some(true);   // or diarization: options.enable_diarize = Some(true)
 
     fn on_new_segment(seg: &Segment) { println!("SEG: {}", seg.text); }
-    fn on_progress(p: i32, label: &str) { println!("{}: {}%", label, p); }
+    fn on_progress(p: i32, progress_type: whisper_diarize_rs::ProgressType, label: &str) { println!("{}: {}% - {}", label, p, progress_type); }
     let callbacks = Callbacks { progress: Some(&on_progress), new_segment_callback: Some(&on_new_segment), is_cancelled: None };
 
     // Only override what you need; everything else comes from the detected (or specified) language preset
@@ -148,8 +148,22 @@ Via standalone: construct `PostProcessConfig` and tweak fields directly.
 
 You can convert these cues to SRT/WebVTT in your application layer.
 
+## Convenience Functions
+
+The crate provides convenience functions for model cache management:
+
+```rust
+use whisper_diarize_rs::{list_cached_models, delete_cached_model};
+
+// List all cached models
+let models = list_cached_models(&cache_dir)?;
+
+// Delete a specific cached model
+let deleted = delete_cached_model(&cache_dir, "base.en");
+```
+
 ## Tips
 
 - For CJK, use presets to disable spaces and enable simple kinsoku rules.
 - If you see jittery edges with noisy audio, consider VAD params like `min_silence_duration = 100 ms`.
-- If segments feel too short for Whisper context, keep VAD segment merging lenient (e.g., 200 ms) while keeping the formatter’s VAD oracle tight.
+- If segments feel too short for Whisper context, keep VAD segment merging lenient (e.g., 200 ms) while keeping the formatter's VAD oracle tight.
